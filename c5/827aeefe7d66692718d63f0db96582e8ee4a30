@@ -1,0 +1,33 @@
+.gitignore
+  s_9ef429c8a2d0bd::t_d18479533b4a22 44-45
+---
+{
+  "schema_version": "authorship/3.1.0",
+  "git_ai_version": "2.2.49",
+  "base_commit_sha": "c5827aeefe7d66692718d63f0db96582e8ee4a30",
+  "prompts": {
+    "s_9ef429c8a2d0bd::t_d18479533b4a22": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f20ad-1084-7fd3-ae60-e9f3d1841962",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 3,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_9ef429c8a2d0bd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f20ad-1084-7fd3-ae60-e9f3d1841962",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>"
+    }
+  }
+}
