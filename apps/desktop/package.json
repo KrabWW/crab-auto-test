@@ -1,0 +1,23 @@
+{
+  "name": "@crab/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs && electron .",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:isolation": "node build.mjs && electron test/isolation-check.cjs"
+  },
+  "dependencies": {
+    "@crab/shared-types": "workspace:*",
+    "playwright": "^1.49.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "electron": "^33.2.1",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}

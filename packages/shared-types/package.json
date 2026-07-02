@@ -1,0 +1,29 @@
+{
+  "name": "@crab/shared-types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./stream": "./src/stream.ts",
+    "./worker": "./src/worker.ts",
+    "./auth": "./src/auth.ts",
+    "./project": "./src/project.ts",
+    "./test-asset": "./src/test-asset.ts",
+    "./execution": "./src/execution.ts",
+    "./ai": "./src/ai.ts",
+    "./model-provider": "./src/model-provider.ts",
+    "./audit": "./src/audit.ts",
+    "./bridge": "./src/bridge.ts",
+    "./error": "./src/error.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

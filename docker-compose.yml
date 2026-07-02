@@ -1,0 +1,23 @@
+# Local dev Postgres + pgvector for crab-auto-test (Phase 2: RAG).
+# Start: docker compose up -d
+# Stop: docker compose down (-v to wipe data)
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: crab-postgres
+    environment:
+      POSTGRES_USER: crab
+      POSTGRES_PASSWORD: crab
+      POSTGRES_DB: crab
+    ports:
+      - "5432:5432"
+    volumes:
+      - crab-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crab -d crab"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  crab-pgdata:

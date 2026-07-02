@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: crab
+          POSTGRES_PASSWORD: crab
+          POSTGRES_DB: crab
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U crab -d crab"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: "postgresql://crab:crab@localhost:5432/crab?schema=public"
+      JWT_SECRET: "ci-jwt-secret"
+      ENVELOPE_MASTER_KEY_B64: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      SEED_ADMIN_EMAIL: "admin@crab.local"
+      SEED_ADMIN_PASSWORD: "admin12345"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install
+        working-directory: crab-auto-test
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate + migrate
+        working-directory: crab-auto-test/services/api
+        run: |
+          pnpm db:generate
+          pnpm exec prisma migrate deploy
+
+      - name: Seed admin
+        working-directory: crab-auto-test/services/api
+        run: pnpm db:seed
+
+      - name: Typecheck
+        working-directory: crab-auto-test
+        run: pnpm -r typecheck
+
+      - name: Build
+        working-directory: crab-auto-test
+        run: pnpm -r build
+
+      - name: Unit tests
+        working-directory: crab-auto-test
+        run: pnpm --filter @crab/api test
+
+      - name: Gate - R7 import scan (renderer/worker no MCP/Skill)
+        working-directory: crab-auto-test
+        run: node infra/ci/r7-import-scan.mjs
+
+      - name: Gate - Skills controlled-adapter scan (no eval/vm/dynamic-require)
+        working-directory: crab-auto-test
+        run: node infra/ci/skill-adapter-scan.mjs
+
+      - name: Gate - F8 stale-artifact drift
+        working-directory: crab-auto-test
+        run: node infra/ci/f8-drift-scan.mjs
+
+      - name: Gate - clean-room scan (no WHartTest)
+        working-directory: crab-auto-test
+        run: node infra/ci/clean-room-scan.mjs
+
+      - name: Gate - secret scan
+        working-directory: crab-auto-test
+        run: node infra/ci/secret-scan.mjs

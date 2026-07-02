@@ -1,0 +1,28 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, Vue, Node.js
+#     We use conventional commits
+#     Domain: testing platform
+context: |
+  Project: Clean-room rebuild of a WHartTest-like AI automated testing platform.
+  Goal: Build a new product with similar high-level testing workflows but independent code, UI, copy, assets, data model, and architecture.
+  Frontend path: Nuxt 3 + Vue 3 + TypeScript + Tailwind CSS + shadcn-vue.
+  Desktop path: Electron wraps the Nuxt UI for a desktop client, with native desktop capabilities kept behind a typed bridge.
+  Backend path: NestJS + Fastify + Prisma + PostgreSQL + Redis/BullMQ.
+  AI path: LangChain.js + LangGraph.js as the core orchestration layer, with MCP TypeScript SDK for tool integration and Playwright workers for automation execution.
+  Governance: Do not copy upstream WHartTest source code, UI assets, brand identity, screenshots, exact page layouts, API implementations, prompts, or documentation text. Use upstream only as competitive/product research.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours

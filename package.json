@@ -1,0 +1,26 @@
+{
+  "name": "crab-auto-test",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@8.15.9",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @crab/api db:generate",
+    "db:migrate": "pnpm --filter @crab/api db:migrate",
+    "api:dev": "pnpm --filter @crab/api dev",
+    "web:dev": "pnpm --filter @crab/web dev",
+    "desktop:dev": "pnpm --filter @crab/desktop dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3",
+    "prettier": "^3.3.3"
+  }
+}

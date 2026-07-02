@@ -1,0 +1,45 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# builds
+dist
+.nuxt
+.output
+.output.*
+build
+out
+*.tsbuildinfo
+
+# turbo
+.turbo
+
+# env
+.env
+.env.*
+!.env.example
+
+# electron
+release
+dist-electron
+
+# test / coverage
+coverage
+test-results
+playwright-report
+playwright/.cache
+
+# editors / os
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.log
+
+# Clean-room: upstream reference repos MUST NOT be part of the workspace.
+# WHartTest / WHartTest-upstream are product-research references only.
+WHartTest/
+WHartTest-upstream/
+
+# OMC local operational state
+.omc/

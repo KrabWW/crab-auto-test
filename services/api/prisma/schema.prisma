@@ -1,0 +1,528 @@
+// Prisma schema for crab-auto-test MVP (Phase M).
+// Data model per PLAN-UNIFIED §5. Secrets are ciphertext/refs ONLY — no plaintext (Architect-R5).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Foundation ────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  displayName  String
+  passwordHash String
+  isAdmin      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships     ProjectMember[]
+  auditLogs       AuditLog[]
+  ownedProjects   Project[]        @relation("ProjectOwner")
+  createdCases    TestCase[]
+  createdProviders ModelProvider[]
+  aiRuns          AiWorkflowRun[]
+  skillInstalls   SkillInstallation[]
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  ownerId     String
+  owner       User     @relation("ProjectOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members        ProjectMember[]
+  modules        Module[]
+  testCases      TestCase[]
+  executions     TestExecution[]
+  modelProviders ModelProvider[]
+  aiRuns         AiWorkflowRun[]
+  auditLogs      AuditLog[]
+  knowledgeBases KnowledgeBase[]
+  skillInstalls  SkillInstallation[]
+  mcpAllowlist   McpToolAllowlist[]
+}
+
+// Simple roles ONLY (owner/member) — no complex RBAC (platform-foundation.2, §11 a2).
+model ProjectMember {
+  id         String   @id @default(cuid())
+  projectId  String
+  userId     String
+  role       ProjectRole
+  invitedAt  DateTime @default(now())
+  acceptedAt DateTime?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+enum ProjectRole {
+  owner
+  member
+}
+
+// Architect-R5: credentials are envelope-encrypted ciphertext + keyId. NO plaintext column.
+model ModelProvider {
+  id                String                  @id @default(cuid())
+  scope             ModelProviderScope
+  projectId         String?
+  name              String
+  kind              ModelProviderKind
+  baseUrl           String
+  modelName         String
+  credentialCiphertext Bytes
+  credentialKeyId     String
+  status            ModelProviderValidationStatus @default(unvalidated)
+  lastValidatedAt   DateTime?
+  createdBy         String
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator   User     @relation(fields: [createdBy], references: [id])
+  aiRuns    AiWorkflowRun[]
+
+  @@index([scope, projectId])
+}
+
+enum ModelProviderScope {
+  global
+  project
+}
+
+enum ModelProviderKind {
+  chat
+  generation
+  embeddings
+}
+
+enum ModelProviderValidationStatus {
+  unvalidated
+  valid
+  invalid
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  actorId    String
+  projectId  String?
+  action     String
+  targetType String
+  targetId   String
+  outcome    AuditOutcome
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  actor   User     @relation(fields: [actorId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+enum AuditOutcome {
+  success
+  failure
+}
+
+// ─── Test assets ───────────────────────────────────────────────────────────
+
+model Module {
+  id        String   @id @default(cuid())
+  projectId String
+  parentId  String?
+  name      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent   Module?  @relation("ModuleTree", fields: [parentId], references: [id])
+  children Module[] @relation("ModuleTree")
+  testCases TestCase[]
+
+  @@index([projectId, parentId])
+}
+
+model TestCase {
+  id            String           @id @default(cuid())
+  projectId     String
+  moduleId      String?
+  title         String
+  preconditions String?
+  priority      TestCasePriority @default(medium)
+  status        TestCaseStatus   @default(draft)
+  tags          String[]
+  notes         String?
+  origin        TestCaseOrigin  @default(manual)
+  aiRunId       String?
+  createdBy     String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  module    Module?  @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  creator   User     @relation(fields: [createdBy], references: [id])
+  steps     TestStep[]
+  executions TestExecution[]
+
+  @@index([projectId, moduleId])
+}
+
+enum TestCasePriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum TestCaseStatus {
+  draft
+  active
+  deprecated
+  archived
+}
+
+enum TestCaseOrigin {
+  manual
+  ai_generated
+}
+
+model TestStep {
+  id           String   @id @default(cuid())
+  testCaseId   String
+  order        Int
+  action       String
+  expectedResult String?
+  data         Json?
+  createdAt    DateTime @default(now())
+
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@index([testCaseId, order])
+}
+
+// ─── Executions ────────────────────────────────────────────────────────────
+
+model TestExecution {
+  id            String           @id @default(cuid())
+  projectId     String
+  testCaseId    String
+  environment   String
+  status        ExecutionStatus  @default(queued)
+  startedAt     DateTime         @default(now())
+  finishedAt    DateTime?
+  durationMs    Int?
+  failedStepId  String?
+  reportSummary Json?
+  workerJobId   String?
+  createdAt     DateTime         @default(now())
+
+  project   Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testCase  TestCase            @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  artifacts ExecutionArtifact[]
+
+  @@index([projectId, status])
+  @@index([testCaseId, createdAt])
+}
+
+enum ExecutionStatus {
+  queued
+  dispatched
+  running
+  passed
+  failed
+  aborted
+  timeout
+}
+
+model ExecutionArtifact {
+  id          String                @id @default(cuid())
+  executionId String
+  type        ExecutionArtifactType
+  storageRef  String
+  filename    String
+  sizeBytes   BigInt
+  checksum    String
+  capturedAt  DateTime              @default(now())
+  metadata    Json?
+  truncated   Boolean               @default(false)
+
+  execution TestExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId, type])
+}
+
+enum ExecutionArtifactType {
+  screenshot
+  log
+  trace
+  report
+}
+
+// ─── AI orchestration ──────────────────────────────────────────────────────
+// R1: canonical run state lives here, NOT in a LangGraph checkpointer.
+
+model AiWorkflowRun {
+  id         String   @id @default(cuid())
+  projectId  String
+  kind       String   // "test-generation"
+  status     String   // AiRunStatus (hyphenated shared-types values)
+  providerId String?
+  createdBy  String
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+  draftCases Json?
+  createdAt  DateTime @default(now())
+
+  project  Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  provider ModelProvider? @relation(fields: [providerId], references: [id])
+  creator  User           @relation(fields: [createdBy], references: [id])
+  inputs   AiRunInput[]
+  stages   WorkflowStageEvent[]
+
+  @@index([projectId, status])
+}
+
+// R4: MVP uploaded-context home, distinct from P2 KB entities.
+// `kind` is a String (not enum) so hyphenated shared-types values pass through.
+model AiRunInput {
+  id         String   @id @default(cuid())
+  runId      String
+  kind       String   // "requirement-text" | "uploaded-attachment"
+  contentRef String
+  filename   String?
+  sizeBytes  BigInt?
+  checksum   String?
+  createdAt  DateTime @default(now())
+
+  run AiWorkflowRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+model WorkflowStageEvent {
+  id                String   @id @default(cuid())
+  runId             String
+  stage             String   // hyphenated shared-types stage names
+  sequence          Int
+  partialOutput     Json?
+  status            WorkflowStageStatus
+  retryCount        Int      @default(0)
+  sourceAttribution Json?
+  createdAt         DateTime @default(now())
+
+  run AiWorkflowRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, sequence])
+}
+
+enum WorkflowStageStatus {
+  success
+  fail
+}
+
+// ─── Phase 2: Knowledge / RAG ──────────────────────────────────────────────
+// R9: pgvector requires raw-SQL migration (CREATE EXTENSION vector + hnsw/ivfflat
+// index). EmbeddingRef.vectorRef holds an opaque reference (pgvector column keyed
+// externally, or a future Qdrant id). The vector column itself is managed via
+// raw SQL, NOT a native Prisma column.
+
+model KnowledgeBase {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@index([projectId])
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  knowledgeBaseId String
+  filename        String
+  mimeType        String
+  sizeBytes       BigInt
+  checksum        String
+  status          DocumentStatus @default(ingested)
+  sourceMetadata  Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  knowledgeBase KnowledgeBase   @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  chunks        DocumentChunk[]
+
+  @@index([knowledgeBaseId, status])
+}
+
+enum DocumentStatus {
+  ingested
+  failed
+}
+
+model DocumentChunk {
+  id              String   @id @default(cuid())
+  documentId      String
+  order           Int
+  text            String
+  sourceMetadata  Json?
+  tokenCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  embeddingRef EmbeddingRef?
+
+  @@index([documentId, order])
+}
+
+// R9: vectorRef is an opaque pointer (pgvector row id in P2; swappable to Qdrant
+// id later via RetrievalBackend interface). The actual vector lives in a raw-SQL
+// managed table/column; this model tracks the cross-reference + backend label.
+model EmbeddingRef {
+  id        String   @id @default(cuid())
+  chunkId   String   @unique
+  backend   String   // "pgvector" | "qdrant" | "stub"
+  vectorRef String   // opaque id (pgvector row id / external id)
+  dims      Int
+  model     String
+  createdAt DateTime @default(now())
+
+  chunk DocumentChunk @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+
+  @@index([backend])
+}
+
+// ─── Phase 2: Skills ────────────────────────────────────────────────────────
+
+model Skill {
+  id               String   @id @default(cuid())
+  name             String
+  version          String
+  description      String
+  author           String
+  compatibility    Json
+  permissions      Json
+  entryPoints      Json
+  checksum         String
+  source           String
+  validationStatus SkillValidationStatus @default(unvalidated)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  installations SkillInstallation[]
+
+  @@unique([name, version])
+  @@index([name])
+}
+
+enum SkillValidationStatus {
+  unvalidated
+  valid
+  invalid
+}
+
+model SkillInstallation {
+  id                  String   @id @default(cuid())
+  projectId           String?
+  skillId             String
+  state               SkillInstallationState @default(installed)
+  activatedPermissions Json?
+  previousVersionId   String?
+  installedBy         String
+  installedChecksum   String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  skill      Skill       @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  project    Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  installer  User        @relation(fields: [installedBy], references: [id])
+  invocations SkillInvocation[]
+
+  @@index([projectId, state])
+}
+
+enum SkillInstallationState {
+  installed
+  disabled
+  uninstalled
+}
+
+model SkillInvocation {
+  id             String   @id @default(cuid())
+  installationId String
+  runId          String?
+  workerJobRef   String?
+  adapter        String   // "langgraph" | "mcp" | "worker"
+  permissionsUsed Json?
+  argsRedacted   Json?
+  resultMeta     Json?
+  status         SkillInvocationStatus
+  invokedAt      DateTime @default(now())
+
+  installation SkillInstallation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+
+  @@index([installationId, invokedAt])
+}
+
+enum SkillInvocationStatus {
+  success
+  failure
+  denied
+}
+
+// ─── Phase 2: MCP ───────────────────────────────────────────────────────────
+// MCP tools are PROJECT-SCOPED ONLY (§11 a5: no global tools, no global admin).
+
+model McpToolAllowlist {
+  id          String   @id @default(cuid())
+  projectId   String
+  toolName    String
+  serverRef   String
+  approved    Boolean  @default(false)
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, toolName, serverRef])
+  @@index([projectId, approved])
+}
+
+model McpToolCall {
+  id            String   @id @default(cuid())
+  runId         String?
+  toolName      String
+  serverRef     String
+  approved      Boolean
+  argsRedacted  Json?
+  resultMeta    Json?
+  status        McpToolCallStatus
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+
+  @@index([runId, status])
+  @@index([toolName])
+}
+
+enum McpToolCallStatus {
+  success
+  failure
+  rejected
+}
