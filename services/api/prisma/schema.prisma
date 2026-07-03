@@ -33,6 +33,8 @@ model User {
   createdApiEnvironments ApiEnvironment[]
   createdApiCases ApiTestCase[]
   createdApiExecutions ApiExecution[]
+  createdRequirements Requirement[]
+  requirementEvents RequirementReviewEvent[]
 }
 
 model Project {
@@ -55,6 +57,9 @@ model Project {
   apiEnvironments ApiEnvironment[]
   apiCases       ApiTestCase[]
   apiExecutions  ApiExecution[]
+  requirements   Requirement[]
+  requirementVersions RequirementVersion[]
+  requirementEvents RequirementReviewEvent[]
   modelProviders ModelProvider[]
   aiRuns         AiWorkflowRun[]
   auditLogs      AuditLog[]
@@ -178,6 +183,7 @@ model TestCase {
   notes         String?
   origin        TestCaseOrigin   @default(manual)
   aiRunId       String?
+  requirementVersionId String?
   createdBy     String
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -185,11 +191,13 @@ model TestCase {
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   module    Module?  @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   creator   User     @relation(fields: [createdBy], references: [id])
+  requirementVersion RequirementVersion? @relation(fields: [requirementVersionId], references: [id], onDelete: SetNull)
   steps     TestStep[]
   executions TestExecution[]
   suiteCases TestSuiteCase[]
 
   @@index([projectId, moduleId])
+  @@index([requirementVersionId])
 }
 
 enum TestCasePriority {
@@ -209,6 +217,70 @@ enum TestCaseStatus {
 enum TestCaseOrigin {
   manual
   ai_generated
+}
+
+// Phase 3: requirement management. Project-scoped requirements keep a mutable
+// current view plus immutable versions for AI-generation traceability.
+model Requirement {
+  id        String   @id @default(cuid())
+  projectId String
+  title     String
+  content   String
+  status    String   // "draft" | "reviewed" | "approved"
+  version   Int      @default(1)
+  createdBy String
+  reviewedBy String?
+  approvedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator  User    @relation(fields: [createdBy], references: [id])
+  versions RequirementVersion[]
+  events   RequirementReviewEvent[]
+
+  @@index([projectId, status])
+  @@index([projectId, updatedAt])
+}
+
+model RequirementVersion {
+  id            String   @id @default(cuid())
+  requirementId String
+  projectId     String
+  version       Int
+  title         String
+  content       String
+  status        String   // "draft" | "reviewed" | "approved"
+  createdBy     String
+  reviewedAt    DateTime?
+  approvedAt    DateTime?
+  approvedBy    String?
+  createdAt     DateTime @default(now())
+
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  aiRuns      AiWorkflowRun[]
+  testCases   TestCase[]
+
+  @@unique([requirementId, version])
+  @@index([projectId, status])
+}
+
+model RequirementReviewEvent {
+  id            String   @id @default(cuid())
+  requirementId String
+  projectId     String
+  fromStatus    String?
+  toStatus      String
+  action        String
+  actorId       String
+  createdAt     DateTime @default(now())
+
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actor       User        @relation(fields: [actorId], references: [id])
+
+  @@index([projectId, requirementId, createdAt])
 }
 
 model TestStep {
@@ -459,6 +531,7 @@ model AiWorkflowRun {
   kind       String   // "test-generation"
   status     String   // AiRunStatus (hyphenated shared-types values)
   providerId String?
+  requirementVersionId String?
   createdBy  String
   startedAt  DateTime @default(now())
   finishedAt DateTime?
@@ -467,11 +540,13 @@ model AiWorkflowRun {
 
   project  Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   provider ModelProvider? @relation(fields: [providerId], references: [id])
+  requirementVersion RequirementVersion? @relation(fields: [requirementVersionId], references: [id], onDelete: SetNull)
   creator  User           @relation(fields: [createdBy], references: [id])
   inputs   AiRunInput[]
   stages   WorkflowStageEvent[]
 
   @@index([projectId, status])
+  @@index([requirementVersionId])
 }
 
 // R4: MVP uploaded-context home, distinct from P2 KB entities.

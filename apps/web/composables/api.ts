@@ -31,6 +31,10 @@ import type {
   UpdateApiTestCaseRequest,
   ApiExecutionDto,
   CreateApiRunRequest,
+  RequirementDto,
+  RequirementVersionDto,
+  CreateRequirementRequest,
+  UpdateRequirementRequest,
 } from "@crab/shared-types";
 
 const API_BASE =
@@ -141,6 +145,29 @@ export const api = {
       request<ApiExecutionDto[]>(`/projects/${projectId}/api-automation/executions`),
     getExecution: (projectId: string, executionId: string) =>
       request<ApiExecutionDto>(`/projects/${projectId}/api-automation/executions/${executionId}`),
+  },
+  requirements: {
+    list: (projectId: string) => request<RequirementDto[]>(`/projects/${projectId}/requirements`),
+    approvedVersions: (projectId: string) =>
+      request<RequirementVersionDto[]>(`/projects/${projectId}/requirements/approved-versions`),
+    create: (projectId: string, req: CreateRequirementRequest) =>
+      request<RequirementDto>(`/projects/${projectId}/requirements`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    update: (projectId: string, requirementId: string, req: UpdateRequirementRequest) =>
+      request<RequirementDto>(`/projects/${projectId}/requirements/${requirementId}`, {
+        method: "PATCH",
+        body: JSON.stringify(req),
+      }),
+    submitReview: (projectId: string, requirementId: string) =>
+      request<RequirementDto>(`/projects/${projectId}/requirements/${requirementId}/submit-review`, {
+        method: "POST",
+      }),
+    approve: (projectId: string, requirementId: string) =>
+      request<RequirementDto>(`/projects/${projectId}/requirements/${requirementId}/approve`, {
+        method: "POST",
+      }),
   },
   ai: {
     start: (projectId: string, req: Omit<StartTestGenerationRequest, "projectId">) =>

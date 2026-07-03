@@ -26,6 +26,8 @@ export interface TestCaseDto {
   origin: TestCaseOrigin;
   /** Present when origin = "ai-generated" — links back to the run. */
   aiRunId?: string;
+  /** Present when linked to an approved managed requirement version. */
+  requirementVersionId?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -54,6 +56,7 @@ export interface CreateTestCaseRequest {
   priority: TestCasePriority;
   tags?: string[];
   notes?: string;
+  requirementVersionId?: string;
   steps?: CreateTestStepRequest[];
 }
 

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../infra/prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import type {
@@ -62,6 +62,7 @@ export class TestAssetsService {
   ): Promise<TestCaseDto> {
     // DB enum uses snake_case (Prisma forbids hyphens); map from shared-types.
     const dbOrigin = origin === "ai-generated" ? "ai_generated" : "manual";
+    const requirementVersionId = await this.resolveApprovedRequirementVersion(projectId, req.requirementVersionId);
     const created = await this.prisma.testCase.create({
       data: {
         projectId,
@@ -71,6 +72,7 @@ export class TestAssetsService {
         priority: req.priority,
         tags: req.tags ?? [],
         notes: req.notes,
+        requirementVersionId,
         origin: dbOrigin,
         aiRunId,
         createdBy: actorId,
@@ -94,7 +96,7 @@ export class TestAssetsService {
       targetType: "test-case",
       targetId: created.id,
       outcome: "success",
-      metadata: { origin: dbOrigin, aiRunId },
+      metadata: { origin: dbOrigin, aiRunId, requirementVersionId },
     });
     return this.toCaseDto(created);
   }
@@ -130,6 +132,7 @@ export class TestAssetsService {
       expectedResults?: string;
     }>,
     moduleId?: string,
+    requirementVersionId?: string,
   ): Promise<TestCaseDto[]> {
     return this.prisma.$transaction(async (tx) => {
       // Idempotency: skip titles already persisted for this run.
@@ -152,6 +155,7 @@ export class TestAssetsService {
             tags: [],
             origin: "ai_generated",
             aiRunId,
+            requirementVersionId,
             createdBy: actorId,
             steps: {
               create: d.steps.map((s) => ({
@@ -172,10 +176,23 @@ export class TestAssetsService {
         targetType: "ai-run",
         targetId: aiRunId,
         outcome: "success",
-        metadata: { count: out.length },
+        metadata: { count: out.length, requirementVersionId },
       });
       return out;
     });
+  }
+
+  private async resolveApprovedRequirementVersion(
+    projectId: string,
+    requirementVersionId?: string,
+  ): Promise<string | undefined> {
+    if (!requirementVersionId) return undefined;
+    const version = await this.prisma.requirementVersion.findFirst({
+      where: { id: requirementVersionId, projectId, status: "approved" },
+      select: { id: true },
+    });
+    if (!version) throw new BadRequestException("Approved requirement version not found");
+    return version.id;
   }
 
   private toModuleDto = (m: {
@@ -208,6 +225,7 @@ export class TestAssetsService {
     notes: string | null;
     origin: "manual" | "ai_generated";
     aiRunId: string | null;
+    requirementVersionId: string | null;
     createdBy: string;
     createdAt: Date;
     updatedAt: Date;
@@ -231,6 +249,7 @@ export class TestAssetsService {
     notes: c.notes ?? undefined,
     origin: c.origin === "ai_generated" ? "ai-generated" : "manual",
     aiRunId: c.aiRunId ?? undefined,
+    requirementVersionId: c.requirementVersionId ?? undefined,
     createdBy: c.createdBy,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),

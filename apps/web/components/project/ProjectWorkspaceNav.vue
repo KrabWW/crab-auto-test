@@ -12,6 +12,7 @@
 import { computed } from "vue";
 import {
   BookOpen,
+  ClipboardCheck,
   Globe,
   ListTree,
   PlayCircle,
@@ -40,6 +41,7 @@ const entries = computed<NavEntry[]>(() => {
   return [
     { label: "Test Cases", slug: "test-cases", to: `${base}/test-cases`, icon: ListTree },
     { label: "AI Generation", slug: "ai-generation", to: `${base}/ai-generation`, icon: Sparkles },
+    { label: "Requirements", slug: "requirements", to: `${base}/requirements`, icon: ClipboardCheck },
     { label: "Executions", slug: "executions", to: `${base}/executions`, icon: PlayCircle },
     { label: "Knowledge", slug: "knowledge", to: `${base}/knowledge`, icon: BookOpen },
     { label: "API Automation", slug: "api-automation", to: `${base}/api-automation`, icon: Globe },

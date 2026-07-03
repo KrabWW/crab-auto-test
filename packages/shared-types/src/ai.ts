@@ -21,7 +21,7 @@ export type AiRunStatus =
 
 export type AiRunKind = "test-generation";
 
-export type AiRunInputKind = "requirement-text" | "uploaded-attachment";
+export type AiRunInputKind = "requirement-text" | "managed-requirement" | "uploaded-attachment";
 
 /**
  * R4: MVP uploaded-context home. Distinct from P2 KB entities
@@ -44,6 +44,7 @@ export interface AiWorkflowRunDto {
   kind: AiRunKind;
   status: AiRunStatus;
   providerId?: string;
+  requirementVersionId?: string;
   createdBy: string;
   startedAt: string;
   finishedAt?: string;
@@ -65,6 +66,8 @@ export interface StartTestGenerationRequest {
   projectId: string;
   moduleId?: string;
   providerId?: string;
+  /** Approved managed requirement version to use as generation input. */
+  requirementVersionId?: string;
   requirementText?: string;
   /** References to already-uploaded AiRunInput attachments. */
   attachmentInputIds?: string[];

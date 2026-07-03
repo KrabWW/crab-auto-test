@@ -62,9 +62,20 @@ export class AiOrchestrationService {
     actorId: string,
     req: StartTestGenerationRequest,
   ): Promise<AiWorkflowRunDto> {
-    if (!req.requirementText && !(req.attachmentInputIds?.length)) {
+    let requirementText = req.requirementText;
+    if (req.requirementVersionId) {
+      const requirementVersion = await this.prisma.requirementVersion.findFirst({
+        where: { id: req.requirementVersionId, projectId: req.projectId, status: "approved" },
+      });
+      if (!requirementVersion) {
+        throw new BadRequestException("Approved requirement version not found");
+      }
+      requirementText = requirementVersion.content;
+    }
+
+    if (!requirementText && !(req.attachmentInputIds?.length)) {
       throw new BadRequestException(
-        "requirementText or attachmentInputIds required",
+        "requirementText, requirementVersionId, or attachmentInputIds required",
       );
     }
     const run = await this.prisma.aiWorkflowRun.create({
@@ -73,6 +84,7 @@ export class AiOrchestrationService {
         kind: "test-generation",
         status: "running",
         providerId: req.providerId,
+        requirementVersionId: req.requirementVersionId,
         createdBy: actorId,
         draftCases: [],
       },
@@ -83,19 +95,30 @@ export class AiOrchestrationService {
     // (knowledge-rag.4) via KnowledgeService.retrieveForGeneration, injected into
     // the generation trace. MVP fallback: AiRunInput requirement text only.
     let ragSources: Array<{ chunkId: string; filename?: string; section?: string; page?: number }> = [];
-    if (req.requirementText) {
+    if (req.requirementVersionId) {
       await this.prisma.aiRunInput.create({
         data: {
           runId: run.id,
-          kind: "requirement-text",
-          contentRef: `inline:${run.id}`,
+          kind: "managed-requirement",
+          contentRef: `requirement-version:${req.requirementVersionId}`,
         },
       });
+    }
+    if (requirementText) {
+      if (!req.requirementVersionId) {
+        await this.prisma.aiRunInput.create({
+          data: {
+            runId: run.id,
+            kind: "requirement-text",
+            contentRef: `inline:${run.id}`,
+          },
+        });
+      }
       // P2 RAG: retrieve project knowledge with source attribution.
       try {
         const rag = await this.knowledge.retrieveForGeneration(
           req.projectId,
-          req.requirementText,
+          requirementText,
           5,
         );
         ragSources = rag.sources;
@@ -115,7 +138,7 @@ export class AiOrchestrationService {
     try {
       const result = await this.llmDraft.generateDrafts(
         req.providerId,
-        req.requirementText ?? "uploaded context",
+        requirementText ?? "uploaded context",
         req.projectId,
       );
       drafts = result.cases;
@@ -279,6 +302,7 @@ export class AiOrchestrationService {
         })),
       })),
       moduleId,
+      run.requirementVersionId ?? undefined,
     );
     await this.markStatus(runId, "accepted");
     await this.emit(runId, "stage", { stage: "persistence", ok: true });
@@ -425,6 +449,7 @@ export class AiOrchestrationService {
     kind: string;
     status: string;
     providerId: string | null;
+    requirementVersionId: string | null;
     createdBy: string;
     startedAt: Date;
     finishedAt: Date | null;
@@ -446,6 +471,7 @@ export class AiOrchestrationService {
       kind: run.kind as AiRunKind,
       status: run.status as AiRunStatus,
       providerId: run.providerId ?? undefined,
+      requirementVersionId: run.requirementVersionId ?? undefined,
       createdBy: run.createdBy,
       startedAt: run.startedAt.toISOString(),
       finishedAt: run.finishedAt?.toISOString(),
