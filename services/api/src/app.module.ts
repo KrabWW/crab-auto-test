@@ -15,6 +15,7 @@ import { AiOrchestrationModule } from "./modules/ai-orchestration/ai-orchestrati
 import { KnowledgeModule } from "./modules/knowledge/knowledge.module";
 import { SkillsModule } from "./modules/skills/skills.module";
 import { McpModule } from "./modules/mcp/mcp.module";
+import { HealthController } from "./health.controller";
 
 @Module({
   imports: [
@@ -35,5 +36,6 @@ import { McpModule } from "./modules/mcp/mcp.module";
     SkillsModule,
     McpModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

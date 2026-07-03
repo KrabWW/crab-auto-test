@@ -18,7 +18,7 @@ async function bootstrap() {
     .filter(Boolean);
   app.enableCors({ origin: corsOrigins });
 
-  app.setGlobalPrefix("api/v1");
+  app.setGlobalPrefix("api/v1", { exclude: ["health"] });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -5,6 +5,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: crab-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: crab
       POSTGRES_PASSWORD: crab

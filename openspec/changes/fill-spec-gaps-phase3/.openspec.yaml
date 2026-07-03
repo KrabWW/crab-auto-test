@@ -1,0 +1,6 @@
+schema: spec-driven
+created: 2026-07-03
+goal: Fill Phase 3 OpenSpec capability gaps (test-suite, api-automation,
+  requirement-management, llm-chat, mcp-admin) with pure ADDED specs so
+  Phase 3 implementation can begin under the spec-first gate. No business
+  code; this change IS the gate.

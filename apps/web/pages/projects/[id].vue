@@ -1,29 +1,37 @@
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-xl font-bold">{{ project?.name ?? "Project" }}</h1>
-      <p class="text-sm text-muted-foreground">{{ project?.slug }}</p>
+    <div class="flex items-end justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-bold">{{ project?.name ?? "Project" }}</h1>
+        <p class="text-sm text-muted-foreground">{{ project?.slug }}</p>
+      </div>
+      <!-- Overview entry: renders the [id]/index.vue overview home. -->
+      <NuxtLink
+        :to="`/projects/${projectId}`"
+        data-testid="nav-overview"
+        class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        :class="{ 'text-foreground underline underline-offset-4': isOverviewActive }"
+        aria-label="Project overview"
+      >
+        Overview
+      </NuxtLink>
     </div>
-    <nav class="flex gap-4 border-b">
-      <NuxtLink :to="`/projects/${projectId}/test-cases`" class="pb-2">Test Cases</NuxtLink>
-      <NuxtLink :to="`/projects/${projectId}/executions`" class="pb-2">Executions</NuxtLink>
-      <NuxtLink :to="`/projects/${projectId}/ai-generation`" class="pb-2">AI Generation</NuxtLink>
-      <NuxtLink :to="`/projects/${projectId}/knowledge`" class="pb-2">Knowledge</NuxtLink>
-      <!-- MUST-3: API automation navigable placeholder route. Full suite = Phase 3. -->
-      <NuxtLink :to="`/projects/${projectId}/api-automation`" class="pb-2">API Automation</NuxtLink>
-      <NuxtLink :to="`/projects/${projectId}/settings`" class="pb-2">Settings</NuxtLink>
-    </nav>
+    <ProjectWorkspaceNav :project-id="projectId" />
     <NuxtPage />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { api } from "~/composables/api";
+import ProjectWorkspaceNav from "~/components/project/ProjectWorkspaceNav.vue";
 import type { ProjectDto } from "@crab/shared-types";
 
 const route = useRoute();
 const projectId = route.params.id as string;
+const isOverviewActive = computed(
+  () => route.path.replace(/\/+$/, "") === `/projects/${projectId}`,
+);
 const project = ref<ProjectDto | null>(null);
 try {
   project.value = await api.projects.get(projectId);
