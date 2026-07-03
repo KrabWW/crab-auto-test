@@ -6,7 +6,7 @@
  * workspace shell ([id].vue). Active state is derived from useRoute().path via
  * exact leaf-route match, so only the currently-active tab is marked current.
  *
- * Clean-room: independently designed. No WHartTest layout/component copy, no
+ * Clean-room: independently designed. No upstream layout/component copy, no
  * Arco. Does not introduce Phase-3 business — the api-automation entry is a
  * navigable placeholder only (MUST-3 / web-ui.3), signalled by a "Phase 3"
  * badge rather than a full suite.

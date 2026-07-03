@@ -7,8 +7,13 @@ import { join } from "node:path";
 const ROOTS = ["services", "apps", "packages"];
 const SCAN_EXT = /\.(ts|js|mjs|vue|json)$/;
 // Skip CI scripts themselves + .omc/openspec docs (provenance lives there).
-const SKIP = (f) => f.includes("infra/ci/") || f.includes("node_modules");
+const SKIP = (f) =>
+  f.includes("infra/ci/") ||
+  f.includes("node_modules") ||
+  f.includes(`${join("apps", "web", ".nuxt")}`) ||
+  f.includes(`${join("apps", "web", ".output")}`);
 const FORBIDDEN = [
+  /WHartTest/i,
   /from\s+['"][^'"]*WHartTest/i,
   /require\(['"][^'"]*WHartTest/i,
   /WHartTest_Django/,

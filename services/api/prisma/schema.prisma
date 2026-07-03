@@ -28,6 +28,7 @@ model User {
   createdProviders ModelProvider[]
   aiRuns          AiWorkflowRun[]
   skillInstalls   SkillInstallation[]
+  createdExecutions TestExecution[]
 }
 
 model Project {
@@ -43,6 +44,8 @@ model Project {
   members        ProjectMember[]
   modules        Module[]
   testCases      TestCase[]
+  testSuites     TestSuite[]
+  suiteRuns      SuiteRun[]
   executions     TestExecution[]
   modelProviders ModelProvider[]
   aiRuns         AiWorkflowRun[]
@@ -165,7 +168,7 @@ model TestCase {
   status        TestCaseStatus   @default(draft)
   tags          String[]
   notes         String?
-  origin        TestCaseOrigin  @default(manual)
+  origin        TestCaseOrigin   @default(manual)
   aiRunId       String?
   createdBy     String
   createdAt     DateTime         @default(now())
@@ -176,6 +179,7 @@ model TestCase {
   creator   User     @relation(fields: [createdBy], references: [id])
   steps     TestStep[]
   executions TestExecution[]
+  suiteCases TestSuiteCase[]
 
   @@index([projectId, moduleId])
 }
@@ -219,6 +223,7 @@ model TestExecution {
   id            String           @id @default(cuid())
   projectId     String
   testCaseId    String
+  createdBy     String
   environment   String
   status        ExecutionStatus  @default(queued)
   startedAt     DateTime         @default(now())
@@ -231,9 +236,11 @@ model TestExecution {
 
   project   Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   testCase  TestCase            @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  creator   User                @relation(fields: [createdBy], references: [id])
   artifacts ExecutionArtifact[]
 
   @@index([projectId, status])
+  @@index([createdBy, status])
   @@index([testCaseId, createdAt])
 }
 
@@ -269,6 +276,58 @@ enum ExecutionArtifactType {
   log
   trace
   report
+}
+
+// ─── Phase 3: Test suites ───────────────────────────────────────────────────
+// Clean-room: ordered grouping over existing TestCase + self-contained SuiteRun.
+
+model TestSuite {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cases   TestSuiteCase[]
+  runs    SuiteRun[]
+
+  @@index([projectId, createdAt])
+}
+
+model TestSuiteCase {
+  id         String @id @default(cuid())
+  suiteId    String
+  testCaseId String
+  order      Int
+
+  suite    TestSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  testCase TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([suiteId, testCaseId])
+  @@index([suiteId, order])
+}
+
+model SuiteRun {
+  id           String   @id @default(cuid())
+  projectId    String
+  suiteId      String
+  environment  String
+  status       String   @default("queued")
+  executionIds String[]
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+  createdBy    String
+  createdAt    DateTime @default(now())
+
+  project Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  suite   TestSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, startedAt])
+  @@index([suiteId, startedAt])
 }
 
 // ─── AI orchestration ──────────────────────────────────────────────────────

@@ -21,6 +21,10 @@ The system SHALL execute a suite by running each member case and aggregating per
 - **THEN** the system MUST create one suite run with a rolled-up status (passed only if every case passed; failed if any case failed) and MUST expose per-case pass/fail, failed step, and duration in the summary.
 
 #### Scenario: Partial suite run records which cases ran
+- **WHEN** a suite run has at least one completed case execution and at least one unfinished case execution
+- **THEN** the system MUST mark the suite run as partial and MUST record which cases completed and which did not.
+
+#### Scenario: Aborted suite run records which cases ran
 - **WHEN** a suite run is aborted mid-execution
 - **THEN** the system MUST mark the suite run as aborted and MUST record which cases completed and which did not.
 

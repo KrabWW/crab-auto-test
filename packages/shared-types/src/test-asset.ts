@@ -63,3 +63,32 @@ export interface CreateTestStepRequest {
   expectedResult?: string;
   data?: unknown;
 }
+
+export interface TestSuiteDto {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  cases: TestSuiteCaseDto[];
+}
+
+export interface TestSuiteCaseDto {
+  testCaseId: string;
+  order: number;
+  testCase?: Pick<TestCaseDto, "id" | "title" | "priority" | "status">;
+}
+
+export interface CreateTestSuiteRequest {
+  name: string;
+  description?: string;
+  cases: Array<{ testCaseId: string; order: number }>;
+}
+
+export type UpdateTestSuiteRequest = Partial<Pick<CreateTestSuiteRequest, "name" | "description">>;
+
+export interface UpdateTestSuiteCasesRequest {
+  cases: Array<{ testCaseId: string; order: number }>;
+}

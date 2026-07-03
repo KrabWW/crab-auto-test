@@ -52,29 +52,21 @@ export class WorkerGatewayService {
     // Re-deliver dispatched-unacked first (oldest), then fresh queued jobs.
     const exec =
       (await this.prisma.testExecution.findFirst({
-        where: { status: "dispatched" },
+        where: { status: "dispatched", createdBy: userId },
         orderBy: { startedAt: "asc" },
       })) ??
       (await this.prisma.testExecution.findFirst({
-        where: { status: "queued" },
+        where: { status: "queued", createdBy: userId },
         orderBy: { startedAt: "asc" },
       }));
     if (!exec) return null;
 
     // R3: ownership — only the user who created the execution may claim.
-    const owner = await this.prisma.testCase.findUnique({
+    const testCase = await this.prisma.testCase.findUnique({
       where: { id: exec.testCaseId },
-      select: { createdBy: true, projectId: true, steps: { orderBy: { order: "asc" } } },
+      select: { projectId: true, steps: { orderBy: { order: "asc" } } },
     });
-    if (!owner) throw new NotFoundException("Test case for execution missing");
-    // For MVP, worker ownership = execution's creating user (resolved via test case creator).
-    // This binds the job to the user's worker token (R3).
-    const creator = await this.prisma.user.findUnique({
-      where: { id: owner.createdBy },
-    });
-    if (!creator || creator.id !== userId) {
-      throw new ForbiddenException("Worker not authorized for this job");
-    }
+    if (!testCase) throw new NotFoundException("Test case for execution missing");
 
     await this.prisma.testExecution.update({
       where: { id: exec.id },
@@ -88,14 +80,14 @@ export class WorkerGatewayService {
       testCaseId: exec.testCaseId,
       environment: exec.environment,
       timeoutMs: 60_000,
-      networkPolicy: { mode: "allow-list", hosts: [] },
+      networkPolicy: { mode: "allow-list", hosts: ["localhost", "127.0.0.1"] },
       resourceLimits: {
         memoryMb: 512,
         cpuPercent: 50,
         concurrency: 1,
         artifactMaxBytes: 10 * 1024 * 1024,
       },
-      steps: owner.steps.map((s) => ({
+      steps: testCase.steps.map((s) => ({
         stepId: s.id,
         order: s.order,
         action: s.action,
@@ -118,11 +110,7 @@ export class WorkerGatewayService {
     if (!exec) throw new NotFoundException("Execution not found");
 
     // R3 ownership check.
-    const owner = await this.prisma.testCase.findUnique({
-      where: { id: exec.testCaseId },
-      select: { createdBy: true },
-    });
-    if (!owner || owner.createdBy !== userId) {
+    if (exec.createdBy !== userId) {
       throw new ForbiddenException("WORKER_JOB_NOT_OWNED");
     }
 
@@ -142,7 +130,7 @@ export class WorkerGatewayService {
       case "result":
         await this.executions.recordResult({
           executionId: msg.jobId,
-          status: msg.status as ExecutionStatus,
+          status: this.toExecutionStatus(msg.status),
           durationMs: msg.durationMs,
           failedStepId: msg.failedStepId,
           reportSummary: msg.reportSummary as Record<string, unknown> | undefined,
@@ -155,6 +143,10 @@ export class WorkerGatewayService {
         for (const a of msg.artifacts) await this.registerArtifact(msg.jobId, a);
         break;
     }
+  }
+
+  private toExecutionStatus(status: "done" | "timeout" | "aborted"): ExecutionStatus {
+    return status === "done" ? "passed" : status;
   }
 
   private async registerArtifact(executionId: string, meta: WorkerArtifactMeta) {

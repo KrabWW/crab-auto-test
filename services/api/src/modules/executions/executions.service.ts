@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../infra/prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { SnapshotService } from "../../infra/streaming/snapshot.service";
@@ -25,10 +25,19 @@ export class ExecutionsService {
     actorId: string,
     req: CreateExecutionRequest,
   ): Promise<ExecutionDto> {
+    const testCase = await this.prisma.testCase.findFirst({
+      where: { id: req.testCaseId, projectId },
+      select: { id: true },
+    });
+    if (!testCase) {
+      throw new BadRequestException("Test case does not belong to project");
+    }
+
     const exec = await this.prisma.testExecution.create({
       data: {
         projectId,
         testCaseId: req.testCaseId,
+        createdBy: actorId,
         environment: req.environment,
         status: "queued",
       },
@@ -46,9 +55,9 @@ export class ExecutionsService {
     return this.toDto(exec, []);
   }
 
-  async get(id: string): Promise<ExecutionDto> {
-    const exec = await this.prisma.testExecution.findUnique({
-      where: { id },
+  async get(projectId: string, id: string): Promise<ExecutionDto> {
+    const exec = await this.prisma.testExecution.findFirst({
+      where: { id, projectId },
       include: { artifacts: true },
     });
     if (!exec) throw new NotFoundException("Execution not found");
@@ -65,7 +74,15 @@ export class ExecutionsService {
   }
 
   /** R8 snapshot refetch — authoritative current state for reconnect. */
-  getSnapshot(id: string): { executionId: string; events: StreamEnvelope[] } {
+  async getSnapshot(
+    projectId: string,
+    id: string,
+  ): Promise<{ executionId: string; events: StreamEnvelope[] }> {
+    const exec = await this.prisma.testExecution.findFirst({
+      where: { id, projectId },
+      select: { id: true },
+    });
+    if (!exec) throw new NotFoundException("Execution not found");
     return { executionId: id, events: this.snapshot.snapshot(id) };
   }
 
@@ -126,6 +143,7 @@ export class ExecutionsService {
       id: string;
       projectId: string;
       testCaseId: string;
+      createdBy: string;
       environment: string;
       status: ExecutionStatus;
       startedAt: Date;
@@ -151,6 +169,7 @@ export class ExecutionsService {
     id: e.id,
     projectId: e.projectId,
     testCaseId: e.testCaseId,
+    createdBy: e.createdBy,
     environment: e.environment,
     status: e.status,
     startedAt: e.startedAt.toISOString(),

@@ -9,11 +9,13 @@ export type ExecutionStatus =
   | "timeout";
 
 export type ExecutionArtifactType = "screenshot" | "log" | "trace" | "report";
+export type SuiteRunStatus = ExecutionStatus | "partial";
 
 export interface ExecutionDto {
   id: string;
   projectId: string;
   testCaseId: string;
+  createdBy: string;
   environment: string;
   status: ExecutionStatus;
   startedAt: string;
@@ -41,5 +43,24 @@ export interface ExecutionArtifactDto {
 
 export interface CreateExecutionRequest {
   testCaseId: string;
+  environment: string;
+}
+
+export interface SuiteRunDto {
+  id: string;
+  projectId: string;
+  suiteId: string;
+  environment: string;
+  status: SuiteRunStatus;
+  executionIds: string[];
+  startedAt: string;
+  finishedAt?: string;
+  durationMs?: number;
+  createdBy: string;
+  createdAt: string;
+  executions: ExecutionDto[];
+}
+
+export interface CreateSuiteRunRequest {
   environment: string;
 }

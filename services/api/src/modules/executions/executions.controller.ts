@@ -32,13 +32,13 @@ export class ExecutionsController {
   }
 
   @Get("executions/:id")
-  get(@Param("id") id: string) {
-    return this.executions.get(id);
+  get(@Param("projectId") projectId: string, @Param("id") id: string) {
+    return this.executions.get(projectId, id);
   }
 
   /** R8 snapshot refetch endpoint — authoritative state on reconnect. */
   @Get("executions/:id/snapshot")
-  snapshot(@Param("id") id: string) {
-    return this.executions.getSnapshot(id);
+  snapshot(@Param("projectId") projectId: string, @Param("id") id: string) {
+    return this.executions.getSnapshot(projectId, id);
   }
 }

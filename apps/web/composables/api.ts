@@ -18,6 +18,11 @@ import type {
   StartTestGenerationRequest,
   ModelProviderDto,
   CreateModelProviderRequest,
+  TestSuiteDto,
+  CreateTestSuiteRequest,
+  UpdateTestSuiteRequest,
+  SuiteRunDto,
+  CreateSuiteRunRequest,
 } from "@crab/shared-types";
 
 const API_BASE =
@@ -45,7 +50,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     });
   }
   if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export const api = {
@@ -62,6 +69,23 @@ export const api = {
     list: (projectId: string) => request<TestCaseDto[]>(`/projects/${projectId}/test-cases`),
     create: (projectId: string, req: CreateTestCaseRequest) =>
       request<TestCaseDto>(`/projects/${projectId}/test-cases`, { method: "POST", body: JSON.stringify(req) }),
+  },
+  testSuites: {
+    list: (projectId: string) => request<TestSuiteDto[]>(`/projects/${projectId}/test-suites`),
+    create: (projectId: string, req: CreateTestSuiteRequest) =>
+      request<TestSuiteDto>(`/projects/${projectId}/test-suites`, { method: "POST", body: JSON.stringify(req) }),
+    update: (projectId: string, suiteId: string, req: UpdateTestSuiteRequest) =>
+      request<TestSuiteDto>(`/projects/${projectId}/test-suites/${suiteId}`, { method: "PATCH", body: JSON.stringify(req) }),
+    remove: (projectId: string, suiteId: string) =>
+      request<void>(`/projects/${projectId}/test-suites/${suiteId}`, { method: "DELETE" }),
+    run: (projectId: string, suiteId: string, req: CreateSuiteRunRequest) =>
+      request<SuiteRunDto>(`/projects/${projectId}/test-suites/${suiteId}/runs`, { method: "POST", body: JSON.stringify(req) }),
+    getRun: (projectId: string, runId: string) => request<SuiteRunDto>(`/projects/${projectId}/suite-runs/${runId}`),
+    updateCases: (projectId: string, suiteId: string, cases: Array<{ testCaseId: string; order: number }>) =>
+      request<TestSuiteDto>(`/projects/${projectId}/test-suites/${suiteId}/cases`, {
+        method: "PATCH",
+        body: JSON.stringify({ cases }),
+      }),
   },
   executions: {
     list: (projectId: string) => request<ExecutionDto[]>(`/projects/${projectId}/executions`),
