@@ -29,6 +29,10 @@ model User {
   aiRuns          AiWorkflowRun[]
   skillInstalls   SkillInstallation[]
   createdExecutions TestExecution[]
+  createdApiSecrets ApiSecret[]
+  createdApiEnvironments ApiEnvironment[]
+  createdApiCases ApiTestCase[]
+  createdApiExecutions ApiExecution[]
 }
 
 model Project {
@@ -47,6 +51,10 @@ model Project {
   testSuites     TestSuite[]
   suiteRuns      SuiteRun[]
   executions     TestExecution[]
+  apiSecrets     ApiSecret[]
+  apiEnvironments ApiEnvironment[]
+  apiCases       ApiTestCase[]
+  apiExecutions  ApiExecution[]
   modelProviders ModelProvider[]
   aiRuns         AiWorkflowRun[]
   auditLogs      AuditLog[]
@@ -332,6 +340,118 @@ model SuiteRun {
 
 // ─── AI orchestration ──────────────────────────────────────────────────────
 // R1: canonical run state lives here, NOT in a LangGraph checkpointer.
+
+// Phase 3: API automation. Clean-room request model with ordered assertions,
+// project environments, extracted values, and immutable redacted run reports.
+
+model ApiSecret {
+  id                   String   @id @default(cuid())
+  projectId            String
+  name                 String
+  credentialCiphertext Bytes
+  credentialKeyId      String
+  createdBy            String
+  createdAt            DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation(fields: [createdBy], references: [id])
+
+  @@index([projectId, createdAt])
+}
+
+model ApiEnvironment {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  variables Json
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator    User           @relation(fields: [createdBy], references: [id])
+  executions ApiExecution[]
+
+  @@index([projectId, createdAt])
+}
+
+model ApiTestCase {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  method    String
+  url       String
+  headers   Json
+  body      String?
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project     Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator     User                    @relation(fields: [createdBy], references: [id])
+  assertions  ApiAssertion[]
+  extractions ApiVariableExtraction[]
+  executions  ApiExecution[]
+
+  @@index([projectId, createdAt])
+}
+
+model ApiAssertion {
+  id       String @id @default(cuid())
+  caseId   String
+  order    Int
+  source   String
+  target   String?
+  operator String
+  expected String?
+
+  case ApiTestCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, order])
+  @@index([caseId, order])
+}
+
+model ApiVariableExtraction {
+  id     String @id @default(cuid())
+  caseId String
+  order  Int
+  name   String
+  source String
+  path   String
+
+  case ApiTestCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, order])
+  @@index([caseId, order])
+}
+
+model ApiExecution {
+  id                 String   @id @default(cuid())
+  projectId          String
+  caseId             String
+  environmentId      String?
+  environmentName    String?
+  status             String
+  startedAt          DateTime @default(now())
+  finishedAt         DateTime?
+  durationMs         Int?
+  responseStatus     Int?
+  assertionResults   Json
+  extractedVariables Json
+  responseSnapshot   Json?
+  reportSummary      Json?
+  createdBy          String
+  createdAt          DateTime @default(now())
+
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  case        ApiTestCase     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  environment ApiEnvironment? @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  creator     User            @relation(fields: [createdBy], references: [id])
+
+  @@index([projectId, startedAt])
+  @@index([caseId, startedAt])
+  @@index([environmentId, startedAt])
+}
 
 model AiWorkflowRun {
   id         String   @id @default(cuid())

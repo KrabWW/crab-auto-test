@@ -23,6 +23,14 @@ import type {
   UpdateTestSuiteRequest,
   SuiteRunDto,
   CreateSuiteRunRequest,
+  ApiEnvironmentDto,
+  CreateApiEnvironmentRequest,
+  UpdateApiEnvironmentRequest,
+  ApiTestCaseDto,
+  CreateApiTestCaseRequest,
+  UpdateApiTestCaseRequest,
+  ApiExecutionDto,
+  CreateApiRunRequest,
 } from "@crab/shared-types";
 
 const API_BASE =
@@ -38,9 +46,10 @@ function authHeaders(): Record<string, string> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const hasBody = init?.body !== undefined && init.body !== null;
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...(init?.headers ?? {}) },
+    headers: { ...(hasBody ? { "Content-Type": "application/json" } : {}), ...authHeaders(), ...(init?.headers ?? {}) },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: res.statusText }));
@@ -91,6 +100,47 @@ export const api = {
     list: (projectId: string) => request<ExecutionDto[]>(`/projects/${projectId}/executions`),
     create: (projectId: string, req: CreateExecutionRequest) =>
       request<ExecutionDto>(`/projects/${projectId}/executions`, { method: "POST", body: JSON.stringify(req) }),
+  },
+  apiAutomation: {
+    listEnvironments: (projectId: string) =>
+      request<ApiEnvironmentDto[]>(`/projects/${projectId}/api-automation/environments`),
+    createEnvironment: (projectId: string, req: CreateApiEnvironmentRequest) =>
+      request<ApiEnvironmentDto>(`/projects/${projectId}/api-automation/environments`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    updateEnvironment: (projectId: string, environmentId: string, req: UpdateApiEnvironmentRequest) =>
+      request<ApiEnvironmentDto>(`/projects/${projectId}/api-automation/environments/${environmentId}`, {
+        method: "PATCH",
+        body: JSON.stringify(req),
+      }),
+    removeEnvironment: (projectId: string, environmentId: string) =>
+      request<void>(`/projects/${projectId}/api-automation/environments/${environmentId}`, {
+        method: "DELETE",
+      }),
+    listCases: (projectId: string) =>
+      request<ApiTestCaseDto[]>(`/projects/${projectId}/api-automation/cases`),
+    createCase: (projectId: string, req: CreateApiTestCaseRequest) =>
+      request<ApiTestCaseDto>(`/projects/${projectId}/api-automation/cases`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    updateCase: (projectId: string, caseId: string, req: UpdateApiTestCaseRequest) =>
+      request<ApiTestCaseDto>(`/projects/${projectId}/api-automation/cases/${caseId}`, {
+        method: "PATCH",
+        body: JSON.stringify(req),
+      }),
+    removeCase: (projectId: string, caseId: string) =>
+      request<void>(`/projects/${projectId}/api-automation/cases/${caseId}`, { method: "DELETE" }),
+    runCase: (projectId: string, caseId: string, req: CreateApiRunRequest) =>
+      request<ApiExecutionDto>(`/projects/${projectId}/api-automation/cases/${caseId}/runs`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    listExecutions: (projectId: string) =>
+      request<ApiExecutionDto[]>(`/projects/${projectId}/api-automation/executions`),
+    getExecution: (projectId: string, executionId: string) =>
+      request<ApiExecutionDto>(`/projects/${projectId}/api-automation/executions/${executionId}`),
   },
   ai: {
     start: (projectId: string, req: Omit<StartTestGenerationRequest, "projectId">) =>

@@ -16,6 +16,7 @@ import { KnowledgeModule } from "./modules/knowledge/knowledge.module";
 import { SkillsModule } from "./modules/skills/skills.module";
 import { McpModule } from "./modules/mcp/mcp.module";
 import { TestSuitesModule } from "./modules/test-suites/test-suites.module";
+import { ApiAutomationModule } from "./modules/api-automation/api-automation.module";
 import { HealthController } from "./health.controller";
 
 @Module({
@@ -37,6 +38,7 @@ import { HealthController } from "./health.controller";
     SkillsModule,
     McpModule,
     TestSuitesModule,
+    ApiAutomationModule,
   ],
   controllers: [HealthController],
 })

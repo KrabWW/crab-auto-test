@@ -5,6 +5,7 @@ export * from "./auth";
 export * from "./project";
 export * from "./test-asset";
 export * from "./execution";
+export * from "./api-automation";
 export * from "./ai";
 export * from "./model-provider";
 export * from "./audit";
