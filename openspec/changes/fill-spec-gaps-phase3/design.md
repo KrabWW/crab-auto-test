@@ -50,11 +50,11 @@ Alternatives considered: introduce a reviewer role (RBAC creep; rejected). Allow
 
 ### Decision 4 (D11): llm-chat is session-level and backend-owned
 
-Chat lets a member hold interactive, single-turn-or-conversational sessions over a configured provider, with the LLM call made exclusively by the NestJS backend over the shared streaming contract. Chat is conversational-only: no tool-calling, no multi-step state, no human-approval gating. It is therefore NOT in scope of backend-ai-orchestration's multi-step workflow requirement (prior R2), so no MODIFIED delta or exemption is needed.
+Chat lets a member hold interactive, single-turn-or-conversational sessions over a configured provider, with the LLM call made exclusively by the NestJS backend over the shared streaming contract. Chat remains session-level: no human-approval gating and no durable multi-step workflow. It may record bounded backend-owned activities for context loading, project-scoped RAG retrieval, and generated-artifact persistence so the UI can display what happened. External MCP tool governance/invocation is still owned by `mcp-admin` and is not implemented by llm-chat. It is therefore NOT in scope of backend-ai-orchestration's multi-step workflow requirement (prior R2), so no MODIFIED delta or exemption is needed.
 
-Rationale: chat sessions (ChatSession/ChatMessage/audit) are a distinct bounded context from the AI generation workflow; bundling them into backend-ai-orchestration would conflate session persistence with multi-step orchestration. Session-level scoping keeps it cleanly outside the durable-graph prohibition (prior R1).
+Rationale: chat sessions (ChatSession/ChatMessage/ChatActivity/ChatGeneratedArtifact/audit) are a distinct bounded context from the AI generation workflow; bundling them into backend-ai-orchestration would conflate session persistence with multi-step orchestration. Session-level scoping keeps it cleanly outside the durable-graph prohibition (prior R1) while still making internal context/RAG/artifact activity visible to users.
 
-Alternatives considered: extend backend-ai-orchestration with chat (bounded-context confusion; rejected). Add tool-calling/multi-step to chat (would enter R2 scope and require a MODIFIED delta; explicitly deferred non-goal).
+Alternatives considered: extend backend-ai-orchestration with chat (bounded-context confusion; rejected). Add unmanaged external MCP tool-calling or multi-step approval to chat (would enter R2/mcp-admin scope and require a MODIFIED delta; explicitly deferred non-goal).
 
 ### Decision 5 (D12): mcp-admin owns the rejection predicate; tools are project-scoped
 

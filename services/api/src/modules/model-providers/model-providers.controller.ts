@@ -18,8 +18,8 @@ export class ModelProvidersController {
   constructor(private readonly providers: ModelProvidersService) {}
 
   @Get()
-  list(@Query("projectId") projectId?: string) {
-    return this.providers.list(projectId);
+  list(@CurrentUser() user: RequestUser, @Query("projectId") projectId?: string) {
+    return this.providers.listForUser(user, projectId);
   }
 
   @Post()

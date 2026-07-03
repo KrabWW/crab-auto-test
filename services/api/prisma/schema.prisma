@@ -35,6 +35,9 @@ model User {
   createdApiExecutions ApiExecution[]
   createdRequirements Requirement[]
   requirementEvents RequirementReviewEvent[]
+  chatSessions    ChatSession[]
+  chatMessages    ChatMessage[]
+  chatArtifacts   ChatGeneratedArtifact[]
 }
 
 model Project {
@@ -62,6 +65,8 @@ model Project {
   requirementEvents RequirementReviewEvent[]
   modelProviders ModelProvider[]
   aiRuns         AiWorkflowRun[]
+  chatSessions   ChatSession[]
+  chatArtifacts  ChatGeneratedArtifact[]
   auditLogs      AuditLog[]
   knowledgeBases KnowledgeBase[]
   skillInstalls  SkillInstallation[]
@@ -108,6 +113,7 @@ model ModelProvider {
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creator   User     @relation(fields: [createdBy], references: [id])
   aiRuns    AiWorkflowRun[]
+  chatSessions ChatSession[]
 
   @@index([scope, projectId])
 }
@@ -585,6 +591,92 @@ model WorkflowStageEvent {
 enum WorkflowStageStatus {
   success
   fail
+}
+
+// Phase 3: llm-chat. Project-scoped conversational sessions with explicit
+// context, RAG activity visibility, and persisted generated artifacts.
+model ChatSession {
+  id         String   @id @default(cuid())
+  projectId  String
+  providerId String
+  title      String
+  createdBy  String
+  nextMessageSequence Int @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  provider   ModelProvider @relation(fields: [providerId], references: [id])
+  creator    User          @relation(fields: [createdBy], references: [id])
+  messages   ChatMessage[]
+  activities ChatActivity[]
+  artifacts  ChatGeneratedArtifact[]
+
+  @@unique([id, projectId])
+  @@index([projectId, updatedAt])
+  @@index([providerId])
+}
+
+model ChatMessage {
+  id                String   @id @default(cuid())
+  sessionId         String
+  projectId          String
+  role              String   // "user" | "assistant"
+  content           String
+  sequence          Int
+  contextRefs       Json?
+  sourceAttribution Json?
+  createdBy         String
+  createdAt         DateTime @default(now())
+
+  session    ChatSession @relation(fields: [sessionId, projectId], references: [id, projectId], onDelete: Cascade)
+  creator    User        @relation(fields: [createdBy], references: [id])
+  activities ChatActivity[]
+  artifacts  ChatGeneratedArtifact[]
+
+  @@unique([id, projectId])
+  @@unique([sessionId, sequence])
+  @@index([projectId, createdAt])
+  @@index([sessionId, sequence])
+}
+
+model ChatActivity {
+  id        String   @id @default(cuid())
+  sessionId String
+  messageId String?
+  projectId String
+  type      String   // "context" | "rag" | "model" | "artifact"
+  name      String
+  status    String   // "success" | "failed" | "skipped"
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  session ChatSession  @relation(fields: [sessionId, projectId], references: [id, projectId], onDelete: Cascade)
+  message ChatMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt])
+  @@index([sessionId, createdAt])
+}
+
+model ChatGeneratedArtifact {
+  id        String   @id @default(cuid())
+  sessionId String
+  messageId String
+  projectId String
+  kind      String   // "assistant-response"
+  title     String
+  content   String
+  metadata  Json?
+  createdBy String
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId, projectId], references: [id, projectId], onDelete: Cascade)
+  message ChatMessage @relation(fields: [messageId, projectId], references: [id, projectId], onDelete: Cascade)
+  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator User        @relation(fields: [createdBy], references: [id])
+
+  @@index([projectId, createdAt])
+  @@index([sessionId, createdAt])
 }
 
 // ─── Phase 2: Knowledge / RAG ──────────────────────────────────────────────

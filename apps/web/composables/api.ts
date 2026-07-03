@@ -35,6 +35,10 @@ import type {
   RequirementVersionDto,
   CreateRequirementRequest,
   UpdateRequirementRequest,
+  ChatSessionDto,
+  ChatContextOptionDto,
+  CreateChatSessionRequest,
+  SendChatMessageRequest,
 } from "@crab/shared-types";
 
 const API_BASE =
@@ -169,6 +173,23 @@ export const api = {
         method: "POST",
       }),
   },
+  chat: {
+    listSessions: (projectId: string) => request<ChatSessionDto[]>(`/projects/${projectId}/chat/sessions`),
+    createSession: (projectId: string, req: CreateChatSessionRequest) =>
+      request<ChatSessionDto>(`/projects/${projectId}/chat/sessions`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    getSession: (projectId: string, sessionId: string) =>
+      request<ChatSessionDto>(`/projects/${projectId}/chat/sessions/${sessionId}`),
+    sendMessage: (projectId: string, sessionId: string, req: SendChatMessageRequest) =>
+      request<ChatSessionDto>(`/projects/${projectId}/chat/sessions/${sessionId}/messages`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    contextOptions: (projectId: string) =>
+      request<ChatContextOptionDto[]>(`/projects/${projectId}/chat/context-options`),
+  },
   ai: {
     start: (projectId: string, req: Omit<StartTestGenerationRequest, "projectId">) =>
       request<AiWorkflowRunDto>(`/projects/${projectId}/ai/test-generation`, { method: "POST", body: JSON.stringify(req) }),
@@ -180,7 +201,8 @@ export const api = {
       request<AiWorkflowRunDto>(`/projects/${projectId}/ai/runs/${runId}/reject`, { method: "POST" }),
   },
   modelProviders: {
-    list: () => request<ModelProviderDto[]>("/model-providers"),
+    list: (projectId?: string) =>
+      request<ModelProviderDto[]>(`/model-providers${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ""}`),
     create: (req: CreateModelProviderRequest) =>
       request<ModelProviderDto>("/model-providers", { method: "POST", body: JSON.stringify(req) }),
     validate: (id: string) => request(`/model-providers/${id}/validate`, { method: "POST" }),

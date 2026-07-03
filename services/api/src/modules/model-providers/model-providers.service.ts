@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from "@nestjs/common";
 import { PrismaService } from "../../infra/prisma/prisma.service";
 import { EnvelopeEncryptionService } from "../../infra/crypto/envelope-encryption.service";
@@ -30,6 +31,10 @@ export class ModelProvidersService {
     createdBy: string,
     req: CreateModelProviderRequest,
   ): Promise<ModelProviderDto> {
+    if (req.scope === "project") {
+      if (!req.projectId) throw new BadRequestException("projectId is required for project-scoped providers");
+      await this.ensureProjectMember(createdBy, req.projectId);
+    }
     const env = this.crypto.encrypt(req.credential);
     const provider = await this.prisma.modelProvider.create({
       data: {
@@ -65,11 +70,24 @@ export class ModelProvidersService {
     return rows.map(this.toDto);
   }
 
+  async listForUser(
+    user: { userId: string; isAdmin?: boolean },
+    projectId?: string,
+  ): Promise<ModelProviderDto[]> {
+    if (projectId && !user.isAdmin) {
+      await this.ensureProjectMember(user.userId, projectId);
+    }
+    return this.list(projectId);
+  }
+
   async validate(id: string, actorId: string): Promise<ValidateProviderResponse> {
     const provider = await this.prisma.modelProvider.findUnique({
       where: { id },
     });
     if (!provider) throw new NotFoundException("Provider not found");
+    if (provider.projectId) {
+      await this.ensureProjectMember(actorId, provider.projectId);
+    }
     const plaintext = this.crypto.decrypt({
       blob: provider.credentialCiphertext.toString("base64"),
       keyId: provider.credentialKeyId,
@@ -159,4 +177,11 @@ export class ModelProvidersService {
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   });
+
+  private async ensureProjectMember(userId: string, projectId: string) {
+    const membership = await this.prisma.projectMember.findUnique({
+      where: { projectId_userId: { projectId, userId } },
+    });
+    if (!membership) throw new ForbiddenException("Not a member of this project");
+  }
 }
