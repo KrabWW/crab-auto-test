@@ -3,9 +3,10 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-01-01",
   devtools: { enabled: true },
-  ssr: false, // SPA mode — required for Electron renderer reuse (R6)
-  modules: ["@nuxtjs/tailwindcss"],
+  ssr: process.env.CRAB_WEB_SPA === "true" ? false : true,
+  modules: ["@nuxtjs/tailwindcss", "@pinia/nuxt"],
   css: ["~/assets/css/main.css"],
+  plugins: ["~/plugins/arco.ts"],
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE ?? "http://localhost:3000/api/v1",

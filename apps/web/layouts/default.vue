@@ -1,25 +1,203 @@
 <template>
-  <div class="min-h-screen flex flex-col">
-    <header class="border-b">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <NuxtLink to="/" class="font-bold">🦀 Crab Auto Test</NuxtLink>
-        <nav class="flex gap-4 text-sm">
-          <NuxtLink to="/projects">Projects</NuxtLink>
-          <NuxtLink v-if="!isAuthenticated()" to="/auth/login">Login</NuxtLink>
-          <button v-else class="text-muted-foreground" @click="logout">Logout</button>
-        </nav>
+  <a-layout class="layout-wrapper">
+    <!-- Sider -->
+    <a-layout-sider
+      :width="220"
+      :collapsed-width="64"
+      :collapsible="true"
+      v-model:collapsed="collapsed"
+      breakpoint="lg"
+      class="layout-sider"
+    >
+      <div class="logo">
+        <span class="logo-mark">🦀</span>
+        <transition name="fade">
+          <span v-if="!collapsed" class="logo-text">Crab Auto Test</span>
+        </transition>
       </div>
-    </header>
-    <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-      <slot />
-    </main>
-  </div>
+      <a-menu
+        :selected-keys="selectedKeys"
+        :default-open-keys="['projects']"
+        :collapsed="collapsed"
+        @menu-item-click="onMenuClick"
+      >
+        <a-menu-item key="projects">
+          <template #icon><icon-folder /></template>
+          项目
+        </a-menu-item>
+        <a-menu-item key="audit">
+          <template #icon><icon-history /></template>
+          审计日志
+        </a-menu-item>
+        <a-menu-item v-if="authStore.isAdmin" key="model-providers">
+          <template #icon><icon-bulb /></template>
+          模型供应商
+        </a-menu-item>
+      </a-menu>
+    </a-layout-sider>
+
+    <!-- Main -->
+    <a-layout class="layout-main">
+      <a-layout-header class="layout-header">
+        <div class="header-left">
+          <a-button
+            type="text"
+            size="small"
+            :title="collapsed ? '展开侧边栏' : '收起侧边栏'"
+            @click="collapsed = !collapsed"
+          >
+            <template #icon>
+              <icon-menu-fold v-if="!collapsed" />
+              <icon-menu-unfold v-else />
+            </template>
+          </a-button>
+        </div>
+        <div class="header-right">
+          <a-button
+            type="text"
+            size="small"
+            :title="theme === 'dark' ? '切换到浅色' : '切换到深色'"
+            @click="toggle"
+          >
+            <template #icon>
+              <icon-sun-fill v-if="theme === 'dark'" />
+              <icon-moon-fill v-else />
+            </template>
+          </a-button>
+          <a-dropdown v-if="authStore.isAuthenticated" position="br">
+            <a-button type="text" size="small">
+              <template #icon><icon-user /></template>
+              <span class="user-name">{{ displayName }}</span>
+            </a-button>
+            <template #content>
+              <a-doption @click="onLogout">
+                <template #icon><icon-export /></template>
+                退出登录
+              </a-doption>
+            </template>
+          </a-dropdown>
+          <NuxtLink v-else to="/auth/login">
+            <a-button type="text" size="small">登录</a-button>
+          </NuxtLink>
+        </div>
+      </a-layout-header>
+      <a-layout-content class="layout-content">
+        <slot />
+      </a-layout-content>
+    </a-layout>
+  </a-layout>
 </template>
 
 <script setup lang="ts">
-const { isAuthenticated, clear } = useSession();
-function logout() {
-  clear();
+import { ref, computed } from "vue";
+import { useAuthStore } from "~/stores/auth";
+import { useTheme } from "~/composables/useTheme";
+
+const authStore = useAuthStore();
+const { theme, toggle } = useTheme();
+
+const collapsed = ref(false);
+
+const selectedKeys = computed<string[]>(() => {
+  const route = useRoute();
+  if (route.path.startsWith("/projects")) return ["projects"];
+  if (route.path.startsWith("/audit")) return ["audit"];
+  if (route.path.startsWith("/model-providers")) return ["model-providers"];
+  return [];
+});
+
+const displayName = computed(() => {
+  const u = authStore.user;
+  return u?.displayName || u?.email || "用户";
+});
+
+function onMenuClick(key: string) {
+  const map: Record<string, string> = {
+    projects: "/projects",
+    audit: "/audit",
+    "model-providers": "/model-providers",
+  };
+  const target = map[key];
+  if (target) navigateTo(target);
+}
+
+function onLogout() {
+  authStore.clear();
   navigateTo("/auth/login");
 }
 </script>
+
+<style scoped>
+.layout-wrapper {
+  min-height: 100vh;
+}
+.layout-sider {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  box-shadow: 1px 0 0 0 var(--color-border-2);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 16px;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: 1px solid var(--color-border-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.logo-mark {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.logo-text {
+  color: var(--color-text-1);
+}
+.layout-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 56px;
+  background-color: var(--color-bg-2);
+  border-bottom: 1px solid var(--color-border-2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.user-name {
+  margin-left: 4px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.layout-content {
+  flex: 1;
+  padding: 16px 24px;
+  background-color: var(--color-fill-1);
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

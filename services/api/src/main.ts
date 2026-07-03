@@ -12,6 +12,12 @@ async function bootstrap() {
     new FastifyAdapter({ trustProxy: true }),
   );
 
+  const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:3001")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: corsOrigins });
+
   app.setGlobalPrefix("api/v1");
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,26 +1,20 @@
-/** Session composable — thin client auth state (no LLM/MCP/Prisma). */
-import { ref, readonly } from "vue";
-import type { SessionDto } from "@crab/shared-types";
-
-const session = ref<SessionDto | null>(null);
-const token = ref<string | null>(localStorage.getItem("crab.token"));
+/**
+ * useSession — backwards-compatible composable that delegates to the Pinia
+ * authStore. Existing call sites (layouts/default.vue, login.vue, etc.) keep
+ * working unchanged while we migrate to direct store usage.
+ *
+ * New code should prefer `useAuthStore()` directly.
+ */
+import { useAuthStore } from "~/stores/auth";
 
 export function useSession() {
-  function setSession(s: SessionDto) {
-    session.value = s;
-    token.value = s.token;
-    localStorage.setItem("crab.token", s.token);
-  }
-  function clear() {
-    session.value = null;
-    token.value = null;
-    localStorage.removeItem("crab.token");
-  }
+  const store = useAuthStore();
+
   return {
-    session: readonly(session),
-    token: readonly(token),
-    isAuthenticated: () => token.value != null,
-    setSession,
-    clear,
+    session: store.user ? { token: store.token!, user: store.user } : null,
+    token: store.token,
+    isAuthenticated: () => store.isAuthenticated,
+    setSession: (s: Parameters<typeof store.setSession>[0]) => store.setSession(s),
+    clear: () => store.clear(),
   };
 }

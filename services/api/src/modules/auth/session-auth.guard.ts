@@ -11,7 +11,11 @@ import { CURRENT_USER, type RequestUser } from "../../common/auth.decorators";
 /** Verifies the session JWT and attaches req.user. */
 @Injectable()
 export class SessionAuthGuard extends AbstractAuthGuard {
-  constructor(private readonly jwt: JwtService) {
+  private readonly jwt = new JwtService({
+    secret: process.env.JWT_SECRET ?? "dev-only-secret-change-me",
+  });
+
+  constructor() {
     super();
   }
 

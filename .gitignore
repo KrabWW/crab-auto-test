@@ -43,3 +43,11 @@ WHartTest-upstream/
 
 # OMC local operational state
 .omc/
+
+# Local agent/browser state
+.claude/
+.omx/
+.playwright-mcp/
+
+# Local reference checkout
+参考目录/

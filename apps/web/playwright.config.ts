@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const chromiumExecutablePath = process.env.E2E_CHROMIUM_EXECUTABLE_PATH;
+
 /**
  * D1 tracer-bullet e2e config.
  *
@@ -16,6 +18,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_WEB_BASE ?? "http://localhost:3001",
     headless: true,
+    launchOptions: chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : undefined,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

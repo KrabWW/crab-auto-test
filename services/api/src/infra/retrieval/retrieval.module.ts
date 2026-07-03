@@ -1,4 +1,5 @@
 import { Global, Module } from "@nestjs/common";
+import { ModelProvidersModule } from "../../modules/model-providers/model-providers.module";
 import { RetrievalBackendService } from "./retrieval-backend.service";
 
 /**
@@ -10,6 +11,7 @@ import { RetrievalBackendService } from "./retrieval-backend.service";
  */
 @Global()
 @Module({
+  imports: [ModelProvidersModule],
   providers: [{ provide: "RetrievalBackend", useClass: RetrievalBackendService }],
   exports: ["RetrievalBackend"],
 })

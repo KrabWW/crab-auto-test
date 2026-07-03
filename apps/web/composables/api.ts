@@ -1,6 +1,9 @@
 /**
  * Typed API client + composables for the thin web client.
  * NO LLM/LangGraph/MCP/Prisma imports (Principle 3, §11 a7).
+ *
+ * Auth token is read from the Pinia authStore (which mirrors `crab.token`
+ * in localStorage). On the server we fall back to an empty header.
  */
 import type {
   SessionDto,
@@ -22,6 +25,9 @@ const API_BASE =
     ?.NUXT_PUBLIC_API_BASE ?? "http://localhost:3000/api/v1";
 
 function authHeaders(): Record<string, string> {
+  if (!import.meta.client) return {};
+  // Read directly from localStorage to avoid Pinia store bootstrapping order
+  // issues during module init. The authStore mirrors this same key.
   const token = localStorage.getItem("crab.token") ?? "";
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
