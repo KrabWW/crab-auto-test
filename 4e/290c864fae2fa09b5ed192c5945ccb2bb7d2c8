@@ -1,0 +1,104 @@
+services/api/src/app.module.ts
+  s_1cc6b4a6ddf7ef::t_a6d1c7899b4ea9 18,39
+services/api/src/main.ts
+  s_1cc6b4a6ddf7ef::t_a6d1c7899b4ea9 21
+services/api/src/health.controller.ts
+  s_1cc6b4a6ddf7ef::t_a6d1c7899b4ea9 1-9
+docker-compose.yml
+  s_1cc6b4a6ddf7ef::t_da14abaff90d52 8
+---
+{
+  "schema_version": "authorship/3.1.0",
+  "git_ai_version": "2.2.49",
+  "base_commit_sha": "4e290c864fae2fa09b5ed192c5945ccb2bb7d2c8",
+  "prompts": {
+    "s_1cc6b4a6ddf7ef::t_24d13d58b1bc68": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f276b-bfc5-7af0-b3d4-62d84a9afcb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 7,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "s_1cc6b4a6ddf7ef::t_524f11b064803c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f276b-bfc5-7af0-b3d4-62d84a9afcb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 7,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "s_1cc6b4a6ddf7ef::t_a6d1c7899b4ea9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f276b-bfc5-7af0-b3d4-62d84a9afcb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 7,
+      "accepted_lines": 108,
+      "overriden_lines": 0
+    },
+    "s_1cc6b4a6ddf7ef::t_c1cebd04ebda6d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f276b-bfc5-7af0-b3d4-62d84a9afcb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 7,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "s_1cc6b4a6ddf7ef::t_da14abaff90d52": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f276b-bfc5-7af0-b3d4-62d84a9afcb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 7,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    },
+    "s_1cc6b4a6ddf7ef::t_f163b46036c9a6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f276b-bfc5-7af0-b3d4-62d84a9afcb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 7,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  },
+  "sessions": {
+    "s_1cc6b4a6ddf7ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f276b-bfc5-7af0-b3d4-62d84a9afcb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "xiejiawei <xiejiawei@ruijie.com.cn>"
+    }
+  }
+}
