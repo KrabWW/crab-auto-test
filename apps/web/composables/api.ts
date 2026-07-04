@@ -12,6 +12,13 @@ import type {
   AuditLogDto,
   ModuleDto,
   ProjectDto,
+  CreateUiPageObjectRequest,
+  CreateUiLocatorRequest,
+  CreateUiPageStepRequest,
+  UiPageObjectDto,
+  UiLocatorDto,
+  UiPageStepDto,
+  UpdateUiPageObjectRequest,
   ProjectWorkspaceSummaryDto,
   CreateProjectRequest,
   TestCaseDto,
@@ -133,6 +140,44 @@ export const api = {
   },
   modules: {
     list: (projectId: string) => request<ModuleDto[]>(`/projects/${projectId}/modules`),
+  },
+  uiAutomation: {
+    listPageObjects: (projectId: string) =>
+      request<UiPageObjectDto[]>(`/projects/${projectId}/ui-automation/page-objects`),
+    getPageObject: (projectId: string, id: string) =>
+      request<UiPageObjectDto>(`/projects/${projectId}/ui-automation/page-objects/${id}`),
+    createPageObject: (projectId: string, req: CreateUiPageObjectRequest) =>
+      request<UiPageObjectDto>(`/projects/${projectId}/ui-automation/page-objects`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    updatePageObject: (projectId: string, id: string, req: UpdateUiPageObjectRequest) =>
+      request<UiPageObjectDto>(`/projects/${projectId}/ui-automation/page-objects/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(req),
+      }),
+    deletePageObject: (projectId: string, id: string) =>
+      request<{ ok: boolean }>(`/projects/${projectId}/ui-automation/page-objects/${id}`, {
+        method: "DELETE",
+      }),
+    addLocator: (projectId: string, pageObjectId: string, req: CreateUiLocatorRequest) =>
+      request<UiLocatorDto>(`/projects/${projectId}/ui-automation/page-objects/${pageObjectId}/locators`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    removeLocator: (projectId: string, locatorId: string) =>
+      request<{ ok: boolean }>(`/projects/${projectId}/ui-automation/locators/${locatorId}`, {
+        method: "DELETE",
+      }),
+    addStep: (projectId: string, pageObjectId: string, req: CreateUiPageStepRequest) =>
+      request<UiPageStepDto>(`/projects/${projectId}/ui-automation/page-objects/${pageObjectId}/steps`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    removeStep: (projectId: string, stepId: string) =>
+      request<{ ok: boolean }>(`/projects/${projectId}/ui-automation/steps/${stepId}`, {
+        method: "DELETE",
+      }),
   },
   testSuites: {
     list: (projectId: string) => request<TestSuiteDto[]>(`/projects/${projectId}/test-suites`),
