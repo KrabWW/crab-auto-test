@@ -81,6 +81,7 @@ model Project {
   knowledgeBases KnowledgeBase[]
   skillInstalls  SkillInstallation[]
   mcpAllowlist   McpToolAllowlist[]
+  mcpServers     McpServerConfig[]
   mcpTools       McpTool[]
   mcpToolActions McpToolAction[]
   mcpToolCalls   McpToolCall[]
@@ -1014,6 +1015,26 @@ enum SkillInvocationStatus {
 
 // ─── Phase 2: MCP ───────────────────────────────────────────────────────────
 // MCP tools are PROJECT-SCOPED ONLY (§11 a5: no global tools, no global admin).
+
+model McpServerConfig {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  url         String
+  transport   String   @default("streamable-http")
+  headers     Json?
+  isActive    Boolean  @default(true)
+  lastSyncAt  DateTime?
+  syncError   String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@index([projectId, isActive])
+}
 
 model McpToolAllowlist {
   id          String   @id @default(cuid())

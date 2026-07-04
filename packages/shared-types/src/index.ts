@@ -10,6 +10,7 @@ export * from "./api-scenarios";
 export * from "./requirement-management";
 export * from "./llm-chat";
 export * from "./mcp-admin";
+export * from "./mcp-servers";
 export * from "./skills";
 export * from "./knowledge";
 export * from "./ai";
