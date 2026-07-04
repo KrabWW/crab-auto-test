@@ -34,6 +34,10 @@ import type {
   UpdateApiTestCaseRequest,
   ApiExecutionDto,
   CreateApiRunRequest,
+  ApiScenarioDto,
+  ApiScenarioRunDto,
+  CreateApiScenarioRequest,
+  UpdateApiScenarioRequest,
   RequirementDto,
   RequirementDocumentDto,
   RequirementModuleDto,
@@ -176,6 +180,44 @@ export const api = {
       request<ApiExecutionDto[]>(`/projects/${projectId}/api-automation/executions`),
     getExecution: (projectId: string, executionId: string) =>
       request<ApiExecutionDto>(`/projects/${projectId}/api-automation/executions/${executionId}`),
+  },
+  apiScenarios: {
+    list: (projectId: string) =>
+      request<ApiScenarioDto[]>(`/projects/${projectId}/api-automation/scenarios`),
+    get: (projectId: string, scenarioId: string) =>
+      request<ApiScenarioDto>(`/projects/${projectId}/api-automation/scenarios/${scenarioId}`),
+    create: (projectId: string, req: CreateApiScenarioRequest) =>
+      request<ApiScenarioDto>(`/projects/${projectId}/api-automation/scenarios`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    update: (projectId: string, scenarioId: string, req: UpdateApiScenarioRequest) =>
+      request<ApiScenarioDto>(`/projects/${projectId}/api-automation/scenarios/${scenarioId}`, {
+        method: "PATCH",
+        body: JSON.stringify(req),
+      }),
+    remove: (projectId: string, scenarioId: string) =>
+      request<{ ok: boolean }>(`/projects/${projectId}/api-automation/scenarios/${scenarioId}`, {
+        method: "DELETE",
+      }),
+    updateSteps: (
+      projectId: string,
+      scenarioId: string,
+      steps: Array<{ caseId: string; order: number }>,
+    ) =>
+      request<ApiScenarioDto>(`/projects/${projectId}/api-automation/scenarios/${scenarioId}/steps`, {
+        method: "PATCH",
+        body: JSON.stringify({ steps }),
+      }),
+    run: (projectId: string, scenarioId: string, environmentId?: string) =>
+      request<ApiScenarioRunDto>(`/projects/${projectId}/api-automation/scenarios/${scenarioId}/runs`, {
+        method: "POST",
+        body: JSON.stringify(environmentId ? { environmentId } : {}),
+      }),
+    listRuns: (projectId: string) =>
+      request<ApiScenarioRunDto[]>(`/projects/${projectId}/api-automation/scenario-runs`),
+    getRun: (projectId: string, runId: string) =>
+      request<ApiScenarioRunDto>(`/projects/${projectId}/api-automation/scenario-runs/${runId}`),
   },
   requirements: {
     list: (projectId: string) => request<RequirementDto[]>(`/projects/${projectId}/requirements`),
