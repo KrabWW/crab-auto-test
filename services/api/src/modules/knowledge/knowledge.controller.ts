@@ -79,4 +79,13 @@ export class KnowledgeController {
     if (!q) throw new BadRequestException("q required");
     return this.knowledge.retrieveForGeneration(projectId, q, topK ? Number(topK) : 5);
   }
+
+  /** Recent retrieval query logs (observability for testers). */
+  @Get("retrieval/logs")
+  listQueryLogs(
+    @Param("projectId") projectId: string,
+    @Query("limit") limit?: string,
+  ) {
+    return this.knowledge.listQueryLogs(projectId, limit ? Number(limit) : 50);
+  }
 }

@@ -15,6 +15,7 @@ import type {
   KnowledgeRetrievalDiagnosticDto,
   KnowledgeSourceAttributionDto,
   RetrieveKnowledgeResultDto,
+  RetrievalQueryLogDto,
 } from "@crab/shared-types";
 
 /**
@@ -148,43 +149,159 @@ export class KnowledgeService {
     queryText: string,
     topK = 5,
   ): Promise<RetrieveKnowledgeResultDto> {
-    const chunks = await this.retrieval.query(projectId, queryText, topK);
-    const ownership = await this.enrichChunkOwnership(projectId, chunks);
-    const allowed = new Set(ownership.map((item) => item.chunkId));
-    return {
-      chunks: chunks.filter((chunk) => allowed.has(chunk.chunkId)),
-      sources: ownership.map((item) => item.source),
-    };
+    const started = Date.now();
+    try {
+      const chunks = await this.retrieval.query(projectId, queryText, topK);
+      const ownership = await this.enrichChunkOwnership(projectId, chunks);
+      const allowed = new Set(ownership.map((item) => item.chunkId));
+      const filtered = chunks.filter((chunk) => allowed.has(chunk.chunkId));
+      await this.logRetrieval({
+        projectId,
+        query: queryText,
+        source: "generation",
+        topK,
+        retrievalTimeMs: Date.now() - started,
+        retrieved: filtered.map((c) => {
+          const own = ownership.find((o) => o.chunkId === c.chunkId);
+          return {
+            chunkId: c.chunkId,
+            ...(c.score !== undefined ? { score: c.score } : {}),
+            ...(own?.source.filename ? { filename: own.source.filename } : {}),
+            ...(own?.source.section ? { section: own.source.section } : {}),
+          };
+        }),
+        success: true,
+      });
+      return {
+        chunks: filtered,
+        sources: ownership.map((item) => item.source),
+      };
+    } catch (err) {
+      await this.logRetrieval({
+        projectId,
+        query: queryText,
+        source: "generation",
+        topK,
+        retrievalTimeMs: Date.now() - started,
+        success: false,
+        error: err instanceof Error ? err.message : "Retrieval failed",
+      });
+      throw err;
+    }
   }
 
   /** knowledge-rag.5: retrieval diagnostics (query/matched/scores/sources). */
   async diagnose(projectId: string, queryText: string, topK = 5): Promise<KnowledgeRetrievalDiagnosticDto> {
-    const diag = await this.retrieval.diagnose(projectId, queryText, topK);
-    const enriched = (
-      await Promise.all(
-        diag.matchedChunks.map(async (m) => {
-          const chunk = await this.findProjectChunk(projectId, m.chunkId);
-          if (!chunk) return null;
-          const metadata = asRecord(chunk.sourceMetadata) ?? m.sourceMetadata;
-          return {
-            ...m,
-            documentId: chunk.document.id,
-            filename: chunk.document.filename ?? (metadata?.filename as string | undefined),
-            textPreview: preview(chunk.text),
-            sourceMetadata: metadata,
-          };
-        }),
-      )
-    ).filter((item): item is NonNullable<typeof item> => item !== null);
-    return {
-      query: diag.query,
-      matchedChunks: enriched,
-      selectedSources: enriched
-        .filter((item) => item.documentId)
-        .map((item) => toSourceAttribution(item.chunkId, item.documentId, item.filename, item.sourceMetadata, item.score)),
-      backend: diag.backend,
-      model: diag.model,
-    };
+    const started = Date.now();
+    try {
+      const diag = await this.retrieval.diagnose(projectId, queryText, topK);
+      const enriched = (
+        await Promise.all(
+          diag.matchedChunks.map(async (m) => {
+            const chunk = await this.findProjectChunk(projectId, m.chunkId);
+            if (!chunk) return null;
+            const metadata = asRecord(chunk.sourceMetadata) ?? m.sourceMetadata;
+            return {
+              ...m,
+              documentId: chunk.document.id,
+              filename: chunk.document.filename ?? (metadata?.filename as string | undefined),
+              textPreview: preview(chunk.text),
+              sourceMetadata: metadata,
+            };
+          }),
+        )
+      ).filter((item): item is NonNullable<typeof item> => item !== null);
+      await this.logRetrieval({
+        projectId,
+        query: queryText,
+        source: "diagnostic",
+        topK,
+        retrievalTimeMs: Date.now() - started,
+        retrieved: enriched.map((m) => ({
+          chunkId: m.chunkId,
+          ...(m.score !== undefined ? { score: m.score } : {}),
+          ...(m.filename ? { filename: m.filename } : {}),
+        })),
+        success: true,
+      });
+      return {
+        query: diag.query,
+        matchedChunks: enriched,
+        selectedSources: enriched
+          .filter((item) => item.documentId)
+          .map((item) => toSourceAttribution(item.chunkId, item.documentId, item.filename, item.sourceMetadata, item.score)),
+        backend: diag.backend,
+        model: diag.model,
+      };
+    } catch (err) {
+      await this.logRetrieval({
+        projectId,
+        query: queryText,
+        source: "diagnostic",
+        topK,
+        retrievalTimeMs: Date.now() - started,
+        success: false,
+        error: err instanceof Error ? err.message : "Diagnostic failed",
+      });
+      throw err;
+    }
+  }
+
+  /** List recent retrieval query logs for observability. */
+  async listQueryLogs(
+    projectId: string,
+    limit = 50,
+  ): Promise<RetrievalQueryLogDto[]> {
+    const rows = await this.prisma.retrievalQueryLog.findMany({
+      where: { projectId },
+      orderBy: { createdAt: "desc" },
+      take: Math.min(Math.max(limit, 1), 200),
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      projectId: row.projectId,
+      query: row.query,
+      source: row.source as RetrievalQueryLogDto["source"],
+      topK: row.topK,
+      ...(row.retrievalTimeMs !== null ? { retrievalTimeMs: row.retrievalTimeMs } : {}),
+      ...(Array.isArray(row.retrievedChunks)
+        ? { retrievedChunks: row.retrievedChunks as RetrievalQueryLogDto["retrievedChunks"] }
+        : {}),
+      success: row.success,
+      ...(row.error ? { error: row.error } : {}),
+      ...(row.createdBy ? { createdBy: row.createdBy } : {}),
+      createdAt: row.createdAt.toISOString(),
+    }));
+  }
+
+  private async logRetrieval(input: {
+    projectId: string;
+    query: string;
+    source: "generation" | "diagnostic" | "chat-rag";
+    topK: number;
+    retrievalTimeMs?: number;
+    retrieved?: Array<{ chunkId: string; score?: number; filename?: string; section?: string }>;
+    success: boolean;
+    error?: string;
+    createdBy?: string;
+  }) {
+    try {
+      await this.prisma.retrievalQueryLog.create({
+        data: {
+          projectId: input.projectId,
+          query: input.query.slice(0, 1000),
+          source: input.source,
+          topK: input.topK,
+          ...(input.retrievalTimeMs !== undefined ? { retrievalTimeMs: input.retrievalTimeMs } : {}),
+          ...(input.retrieved ? { retrievedChunks: input.retrieved as never } : {}),
+          success: input.success,
+          ...(input.error ? { error: input.error.slice(0, 500) } : {}),
+          ...(input.createdBy ? { createdBy: input.createdBy } : {}),
+        },
+      });
+    } catch {
+      // Logging is best-effort; never fail retrieval because of a logging error.
+    }
   }
 
   private async getDocumentDto(projectId: string, kbId: string, documentId: string): Promise<KnowledgeDocumentDto> {

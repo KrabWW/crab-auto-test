@@ -79,6 +79,7 @@ model Project {
   chatTokenUsages ChatTokenUsage[]
   auditLogs      AuditLog[]
   knowledgeBases KnowledgeBase[]
+  retrievalQueryLogs RetrievalQueryLog[]
   skillInstalls  SkillInstallation[]
   mcpAllowlist   McpToolAllowlist[]
   mcpServers     McpServerConfig[]
@@ -921,6 +922,27 @@ model DocumentChunk {
 // R9: vectorRef is an opaque pointer (pgvector row id in P2; swappable to Qdrant
 // id later via RetrievalBackend interface). The actual vector lives in a raw-SQL
 // managed table/column; this model tracks the cross-reference + backend label.
+// Phase 3: knowledge RAG observability — log every retrieval query so testers
+// can audit what was retrieved for each generation / diagnostic call.
+model RetrievalQueryLog {
+  id              String   @id @default(cuid())
+  projectId       String
+  query           String
+  source          String   // "generation" | "diagnostic" | "chat-rag"
+  topK            Int
+  retrievalTimeMs Int?
+  retrievedChunks Json?    // [{ chunkId, score, filename, section }]
+  success         Boolean  @default(true)
+  error           String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([source, createdAt])
+}
+
 model EmbeddingRef {
   id        String   @id @default(cuid())
   chunkId   String   @unique

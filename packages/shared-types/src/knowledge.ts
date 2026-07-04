@@ -82,3 +82,26 @@ export interface KnowledgeRetrievalDiagnosticDto {
   backend: string;
   model: string;
 }
+
+// ─── Retrieval query log (observability for testers) ───────────────────────
+
+export type RetrievalQuerySource = "generation" | "diagnostic" | "chat-rag";
+
+export interface RetrievalQueryLogDto {
+  id: string;
+  projectId: string;
+  query: string;
+  source: RetrievalQuerySource;
+  topK: number;
+  retrievalTimeMs?: number;
+  retrievedChunks?: Array<{
+    chunkId: string;
+    score?: number;
+    filename?: string;
+    section?: string;
+  }>;
+  success: boolean;
+  error?: string;
+  createdBy?: string;
+  createdAt: string;
+}
