@@ -19,6 +19,7 @@ import {
   PlayCircle,
   Settings,
   Sparkles,
+  Wrench,
   type LucideIcon,
 } from "lucide-vue-next";
 import { cn } from "~/lib/utils";
@@ -46,6 +47,7 @@ const entries = computed<NavEntry[]>(() => {
     { label: "AI Chat", slug: "chat", to: `${base}/chat`, icon: BotMessageSquare },
     { label: "Executions", slug: "executions", to: `${base}/executions`, icon: PlayCircle },
     { label: "Knowledge", slug: "knowledge", to: `${base}/knowledge`, icon: BookOpen },
+    { label: "MCP Admin", slug: "mcp-admin", to: `${base}/mcp-admin`, icon: Wrench },
     { label: "API Automation", slug: "api-automation", to: `${base}/api-automation`, icon: Globe },
     { label: "Settings", slug: "settings", to: `${base}/settings`, icon: Settings },
   ];

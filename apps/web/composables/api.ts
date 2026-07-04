@@ -39,6 +39,11 @@ import type {
   ChatContextOptionDto,
   CreateChatSessionRequest,
   SendChatMessageRequest,
+  McpToolDto,
+  CreateMcpToolRequest,
+  TestMcpToolRequest,
+  McpToolHistoryDto,
+  McpToolCallResultDto,
 } from "@crab/shared-types";
 
 const API_BASE =
@@ -189,6 +194,24 @@ export const api = {
       }),
     contextOptions: (projectId: string) =>
       request<ChatContextOptionDto[]>(`/projects/${projectId}/chat/context-options`),
+  },
+  mcp: {
+    listTools: (projectId: string) => request<McpToolDto[]>(`/projects/${projectId}/mcp/tools`),
+    createTool: (projectId: string, req: CreateMcpToolRequest) =>
+      request<McpToolDto>(`/projects/${projectId}/mcp/tools`, { method: "POST", body: JSON.stringify(req) }),
+    reviewTool: (projectId: string, toolId: string) =>
+      request<McpToolDto>(`/projects/${projectId}/mcp/tools/${toolId}/review`, { method: "POST" }),
+    approveTool: (projectId: string, toolId: string) =>
+      request<McpToolDto>(`/projects/${projectId}/mcp/tools/${toolId}/approve`, { method: "POST" }),
+    revokeTool: (projectId: string, toolId: string) =>
+      request<McpToolDto>(`/projects/${projectId}/mcp/tools/${toolId}/revoke`, { method: "POST" }),
+    testTool: (projectId: string, toolId: string, req: TestMcpToolRequest) =>
+      request<McpToolCallResultDto>(`/projects/${projectId}/mcp/tools/${toolId}/test-call`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    history: (projectId: string, toolId: string) =>
+      request<McpToolHistoryDto>(`/projects/${projectId}/mcp/tools/${toolId}/history`),
   },
   ai: {
     start: (projectId: string, req: Omit<StartTestGenerationRequest, "projectId">) =>

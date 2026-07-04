@@ -71,6 +71,9 @@ model Project {
   knowledgeBases KnowledgeBase[]
   skillInstalls  SkillInstallation[]
   mcpAllowlist   McpToolAllowlist[]
+  mcpTools       McpTool[]
+  mcpToolActions McpToolAction[]
+  mcpToolCalls   McpToolCall[]
 }
 
 // Simple roles ONLY (owner/member) — no complex RBAC (platform-foundation.2, §11 a2).
@@ -851,8 +854,47 @@ model McpToolAllowlist {
   @@index([projectId, approved])
 }
 
+model McpTool {
+  id          String        @id @default(cuid())
+  projectId   String
+  toolName    String
+  serverRef   String
+  description String?
+  status      McpToolStatus @default(proposed)
+  proposedBy  String
+  reviewedBy  String?
+  approvedBy  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actions McpToolAction[]
+
+  @@unique([projectId, toolName, serverRef])
+  @@index([projectId, status])
+}
+
+model McpToolAction {
+  id         String         @id @default(cuid())
+  toolId     String
+  projectId  String
+  action     String
+  fromStatus McpToolStatus?
+  toStatus   McpToolStatus
+  actorId    String
+  metadata   Json?
+  createdAt  DateTime       @default(now())
+
+  tool    McpTool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([toolId, createdAt])
+  @@index([projectId, createdAt])
+}
+
 model McpToolCall {
   id            String   @id @default(cuid())
+  projectId     String?
   runId         String?
   toolName      String
   serverRef     String
@@ -863,8 +905,19 @@ model McpToolCall {
   startedAt     DateTime @default(now())
   finishedAt    DateTime?
 
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, startedAt])
+  @@index([projectId, toolName, serverRef])
   @@index([runId, status])
   @@index([toolName])
+}
+
+enum McpToolStatus {
+  proposed
+  reviewed
+  approved
+  revoked
 }
 
 enum McpToolCallStatus {

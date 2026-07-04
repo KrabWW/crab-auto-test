@@ -8,6 +8,7 @@ export * from "./execution";
 export * from "./api-automation";
 export * from "./requirement-management";
 export * from "./llm-chat";
+export * from "./mcp-admin";
 export * from "./ai";
 export * from "./model-provider";
 export * from "./audit";
