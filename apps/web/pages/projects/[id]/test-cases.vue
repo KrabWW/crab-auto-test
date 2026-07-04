@@ -39,8 +39,21 @@
     </Card>
     <Card class="divide-y">
       <div v-for="c in cases" :key="c.id" class="p-3">
-        <div class="font-medium">{{ c.title }}</div>
-        <div class="text-xs text-muted-foreground">{{ c.priority }} · {{ c.origin }} · {{ c.steps.length }} steps</div>
+        <div class="flex items-start justify-between gap-3">
+          <div class="font-medium">{{ c.title }}</div>
+          <div class="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{{ c.priority }} · {{ c.origin }} · {{ c.steps.length }} steps</span>
+            <NuxtLink
+              v-if="c.requirementVersionId"
+              :to="`/projects/${projectId}/requirements`"
+              class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/15"
+              :data-testid="`case-requirement-link-${c.id}`"
+            >
+              From requirement
+            </NuxtLink>
+            <span v-else class="rounded-full bg-muted px-2 py-1 text-xs">Manual</span>
+          </div>
+        </div>
       </div>
       <div v-if="!cases.length" class="p-3 text-sm text-muted-foreground">No test cases yet. Approve a requirement, generate draft cases, then accept them here or add a manual case.</div>
     </Card>

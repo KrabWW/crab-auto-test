@@ -1,6 +1,13 @@
-﻿/** Requirement management contracts: project-scoped versioned requirements. */
-export type RequirementStatus = "draft" | "reviewed" | "approved";
-export type RequirementTransitionAction = "create" | "update" | "submit-review" | "approve";
+/** Requirement management contracts: project-scoped versioned requirements. */
+export type RequirementStatus = "draft" | "in-review" | "approved" | "rejected" | "archived";
+export type RequirementTransitionAction =
+  | "create"
+  | "update"
+  | "submit-review"
+  | "approve"
+  | "reject"
+  | "archive"
+  | "delete";
 
 export interface RequirementVersionDto {
   id: string;
@@ -14,6 +21,10 @@ export interface RequirementVersionDto {
   reviewedAt?: string;
   approvedAt?: string;
   approvedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  archivedAt?: string;
+  archivedBy?: string;
   createdAt: string;
 }
 
@@ -38,6 +49,8 @@ export interface RequirementDto {
   createdBy: string;
   reviewedBy?: string;
   approvedBy?: string;
+  rejectedBy?: string;
+  archivedBy?: string;
   createdAt: string;
   updatedAt: string;
   versions: RequirementVersionDto[];

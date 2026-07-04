@@ -15,6 +15,8 @@ function requirementRow(overrides: Record<string, unknown> = {}) {
     createdBy: "user-a",
     reviewedBy: null,
     approvedBy: null,
+    rejectedBy: null,
+    archivedBy: null,
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     versions: [
@@ -30,6 +32,10 @@ function requirementRow(overrides: Record<string, unknown> = {}) {
         reviewedAt: null,
         approvedAt: null,
         approvedBy: null,
+        rejectedAt: null,
+        rejectedBy: null,
+        archivedAt: null,
+        archivedBy: null,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
       },
     ],
@@ -76,8 +82,8 @@ describe("requirements workflow", () => {
     expect(dto.reviewEvents[0]).toMatchObject({ action: "create", toStatus: "draft" });
   });
 
-  it("lets only project owners approve reviewed requirements", async () => {
-    const reviewed = requirementRow({ status: "reviewed", reviewedBy: "user-b" });
+  it("lets only project owners approve in-review requirements", async () => {
+    const reviewed = requirementRow({ status: "in-review", reviewedBy: "user-b" });
     const approved = requirementRow({
       status: "approved",
       reviewedBy: "user-b",
@@ -88,7 +94,7 @@ describe("requirements workflow", () => {
           id: "evt-2",
           requirementId: "req-1",
           projectId: "project-a",
-          fromStatus: "reviewed",
+          fromStatus: "in-review",
           toStatus: "approved",
           action: "approve",
           actorId: "owner-a",
@@ -160,8 +166,8 @@ describe("requirements workflow", () => {
     );
   });
 
-  it("returns reviewed requirements to draft when edited", async () => {
-    const reviewed = requirementRow({ status: "reviewed", reviewedBy: "reviewer-a" });
+  it("returns in-review requirements to draft when edited", async () => {
+    const reviewed = requirementRow({ status: "in-review", reviewedBy: "reviewer-a" });
     const updatedDraft = requirementRow({
       title: "Checkout revised",
       content: "Buyer can check out after editing",
@@ -173,7 +179,7 @@ describe("requirements workflow", () => {
           id: "evt-3",
           requirementId: "req-1",
           projectId: "project-a",
-          fromStatus: "reviewed",
+          fromStatus: "in-review",
           toStatus: "draft",
           action: "update",
           actorId: "user-a",
@@ -201,8 +207,112 @@ describe("requirements workflow", () => {
       expect.objectContaining({ data: expect.objectContaining({ status: "draft", reviewedBy: null }) }),
     );
     expect(tx.requirementReviewEvent.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ fromStatus: "reviewed", toStatus: "draft", action: "update" }) }),
+      expect.objectContaining({ data: expect.objectContaining({ fromStatus: "in-review", toStatus: "draft", action: "update" }) }),
     );
+  });
+
+  it("rejects in-review requirements when an owner calls reject", async () => {
+    const inReview = requirementRow({ status: "in-review", reviewedBy: "user-b" });
+    const rejected = requirementRow({
+      status: "rejected",
+      reviewedBy: "user-b",
+      rejectedBy: "owner-a",
+      versions: [{ ...inReview.versions[0], status: "rejected", rejectedBy: "owner-a", rejectedAt: new Date("2026-01-01T00:03:00.000Z") }],
+      events: [
+        {
+          id: "evt-reject",
+          requirementId: "req-1",
+          projectId: "project-a",
+          fromStatus: "in-review",
+          toStatus: "rejected",
+          action: "reject",
+          actorId: "owner-a",
+          createdAt: new Date("2026-01-01T00:03:00.000Z"),
+        },
+      ],
+    });
+    const tx = {
+      requirement: { update: vi.fn(), findUniqueOrThrow: vi.fn().mockResolvedValue(rejected) },
+      requirementVersion: { update: vi.fn() },
+      requirementReviewEvent: { create: vi.fn() },
+    };
+    const prisma = {
+      projectMember: { findUnique: vi.fn().mockResolvedValue({ role: "owner" }) },
+      requirement: { findFirst: vi.fn().mockResolvedValue(inReview) },
+      $transaction: (cb: (tx: typeof tx) => unknown) => cb(tx),
+    };
+    const svc = makeRequirementsService(prisma);
+
+    const dto = await svc.reject("project-a", "req-1", "owner-a");
+
+    expect(dto.status).toBe("rejected");
+    expect(dto.rejectedBy).toBe("owner-a");
+    expect(tx.requirementReviewEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: "reject", toStatus: "rejected" }) }),
+    );
+  });
+
+  it("archives non-approved requirements and records the event", async () => {
+    const rejected = requirementRow({ status: "rejected", rejectedBy: "owner-a" });
+    const archived = requirementRow({
+      status: "archived",
+      archivedBy: "user-a",
+      versions: [{ ...rejected.versions[0], status: "archived", archivedBy: "user-a", archivedAt: new Date("2026-01-01T00:04:00.000Z") }],
+      events: [
+        {
+          id: "evt-archive",
+          requirementId: "req-1",
+          projectId: "project-a",
+          fromStatus: "rejected",
+          toStatus: "archived",
+          action: "archive",
+          actorId: "user-a",
+          createdAt: new Date("2026-01-01T00:04:00.000Z"),
+        },
+      ],
+    });
+    const tx = {
+      requirement: { update: vi.fn(), findUniqueOrThrow: vi.fn().mockResolvedValue(archived) },
+      requirementVersion: { update: vi.fn() },
+      requirementReviewEvent: { create: vi.fn() },
+    };
+    const svc = makeRequirementsService({
+      requirement: { findFirst: vi.fn().mockResolvedValue(rejected) },
+      $transaction: (cb: (tx: typeof tx) => unknown) => cb(tx),
+    });
+
+    const dto = await svc.archive("project-a", "req-1", "user-a");
+
+    expect(dto.status).toBe("archived");
+    expect(dto.archivedBy).toBe("user-a");
+  });
+
+  it("deletes only deletable requirements and clears history", async () => {
+    const archived = requirementRow({ status: "archived", archivedBy: "user-a" });
+    const tx = {
+      requirementReviewEvent: { deleteMany: vi.fn().mockResolvedValue({ count: 2 }) },
+      requirementVersion: { deleteMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      requirement: { delete: vi.fn().mockResolvedValue(undefined) },
+    };
+    const svc = makeRequirementsService({
+      requirement: { findFirst: vi.fn().mockResolvedValue(archived) },
+      $transaction: (cb: (tx: typeof tx) => unknown) => cb(tx),
+    });
+
+    await svc.delete("project-a", "req-1", "user-a");
+
+    expect(tx.requirementReviewEvent.deleteMany).toHaveBeenCalledWith({ where: { requirementId: "req-1" } });
+    expect(tx.requirementVersion.deleteMany).toHaveBeenCalledWith({ where: { requirementId: "req-1" } });
+    expect(tx.requirement.delete).toHaveBeenCalledWith({ where: { id: "req-1" } });
+  });
+
+  it("refuses to delete approved requirements", async () => {
+    const approved = requirementRow({ status: "approved", approvedBy: "owner-a" });
+    const svc = makeRequirementsService({
+      requirement: { findFirst: vi.fn().mockResolvedValue(approved) },
+    });
+
+    await expect(svc.delete("project-a", "req-1", "user-a")).rejects.toBeInstanceOf(BadRequestException);
   });
 });
 

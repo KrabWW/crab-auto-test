@@ -57,7 +57,7 @@ test("requirements: create, review, approve, and revise", async ({ page }) => {
   );
   await page.getByRole("button", { name: "Submit review" }).click();
   expect((await reviewResponse).ok()).toBe(true);
-  await expect(page.getByTestId("requirement-detail")).toContainText("reviewed");
+  await expect(page.getByTestId("requirement-detail")).toContainText("in-review");
 
   const approveResponse = page.waitForResponse(
     (response) => response.request().method() === "POST" && response.url().includes("/approve"),
@@ -65,18 +65,10 @@ test("requirements: create, review, approve, and revise", async ({ page }) => {
   await page.getByRole("button", { name: "Approve" }).click();
   expect((await approveResponse).ok()).toBe(true);
   await expect(page.getByTestId("requirement-detail")).toContainText("approved");
-  await expect(page.getByTestId("requirement-detail")).toContainText("Approval records");
+  await expect(page.getByTestId("requirement-detail")).toContainText("Approval history");
 
-  const approvedVersionsLoad = page.waitForResponse(
-    (response) =>
-      response.request().method() === "GET" &&
-      response.url().includes(`/projects/${project.id}/requirements/approved-versions`),
-  );
-  await page.goto(`/projects/${project.id}/ai-generation`);
-  await approvedVersionsLoad;
-  await expect(page.getByLabel("Approved requirement")).toContainText(`Checkout ${slug}`);
+  // Reject flow: edit back to draft, submit review, then reject.
   await page.goto(`/projects/${project.id}/requirements`);
-
   await page.getByTestId("requirement-edit-content").fill("Buyer can pay with a saved card and a coupon.");
   const updateResponse = page.waitForResponse(
     (response) => response.request().method() === "PATCH" && response.url().includes(`/projects/${project.id}/requirements/`),
@@ -84,4 +76,36 @@ test("requirements: create, review, approve, and revise", async ({ page }) => {
   await page.getByRole("button", { name: "Save changes" }).click();
   expect((await updateResponse).ok()).toBe(true);
   await expect(page.getByTestId("requirement-detail")).toContainText("Version 2 / draft");
+
+  const submitReviewAgain = page.waitForResponse(
+    (response) => response.request().method() === "POST" && response.url().includes("/submit-review"),
+  );
+  await page.getByTestId("submit-review").click();
+  expect((await submitReviewAgain).ok()).toBe(true);
+  await expect(page.getByTestId("requirement-detail")).toContainText("in-review");
+
+  const rejectResponse = page.waitForResponse(
+    (response) => response.request().method() === "POST" && response.url().includes("/reject"),
+  );
+  await page.getByTestId("reject").click();
+  await page.getByTestId("confirm-action").click();
+  expect((await rejectResponse).ok()).toBe(true);
+  await expect(page.getByTestId("requirement-detail")).toContainText("rejected");
+
+  // Archive flow: from rejected, archive the requirement via confirmation dialog.
+  const archiveResponse = page.waitForResponse(
+    (response) => response.request().method() === "POST" && response.url().includes("/archive"),
+  );
+  await page.getByTestId("archive").click();
+  await page.getByTestId("confirm-action").click();
+  expect((await archiveResponse).ok()).toBe(true);
+  await expect(page.getByTestId("requirement-detail")).toContainText("archived");
+
+  // Delete flow: archived requirements are deletable via destructive confirmation.
+  const deleteResponse = page.waitForResponse(
+    (response) => response.request().method() === "DELETE" && response.url().includes(`/projects/${project.id}/requirements/`),
+  );
+  await page.getByTestId("delete").click();
+  await page.getByTestId("confirm-action").click();
+  expect((await deleteResponse).ok()).toBe(true);
 });

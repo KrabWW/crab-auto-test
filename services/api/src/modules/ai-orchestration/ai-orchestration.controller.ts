@@ -32,6 +32,11 @@ export class AiOrchestrationController {
     return this.ai.startGeneration(user.userId, { ...body, projectId });
   }
 
+  @Get("ai/runs")
+  list(@Param("projectId") projectId: string) {
+    return this.ai.listForProject(projectId);
+  }
+
   @Get("ai/runs/:runId")
   get(@Param("runId") runId: string) {
     return this.ai.get(runId);

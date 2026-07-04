@@ -231,17 +231,19 @@ enum TestCaseOrigin {
 // Phase 3: requirement management. Project-scoped requirements keep a mutable
 // current view plus immutable versions for AI-generation traceability.
 model Requirement {
-  id        String   @id @default(cuid())
-  projectId String
-  title     String
-  content   String
-  status    String   // "draft" | "reviewed" | "approved"
-  version   Int      @default(1)
-  createdBy String
+  id         String   @id @default(cuid())
+  projectId  String
+  title      String
+  content    String
+  status     String   // "draft" | "in-review" | "approved" | "rejected" | "archived"
+  version    Int      @default(1)
+  createdBy  String
   reviewedBy String?
   approvedBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  rejectedBy String?
+  archivedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creator  User    @relation(fields: [createdBy], references: [id])
@@ -259,11 +261,15 @@ model RequirementVersion {
   version       Int
   title         String
   content       String
-  status        String   // "draft" | "reviewed" | "approved"
+  status        String   // "draft" | "in-review" | "approved" | "rejected" | "archived"
   createdBy     String
   reviewedAt    DateTime?
   approvedAt    DateTime?
   approvedBy    String?
+  rejectedAt    DateTime?
+  rejectedBy    String?
+  archivedAt    DateTime?
+  archivedBy    String?
   createdAt     DateTime @default(now())
 
   requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)

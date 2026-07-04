@@ -9,11 +9,19 @@
             Capture project requirements, review them with simple owner/member roles, and use approved versions for AI generation.
           </p>
         </div>
-        <Button :disabled="loading" @click="load">Refresh</Button>
+        <div class="flex items-center gap-2">
+          <Input
+            v-model="search"
+            data-testid="requirement-search"
+            placeholder="Search requirements"
+            class="h-9 w-56"
+          />
+          <Button :disabled="loading" variant="outline" @click="load">Refresh</Button>
+        </div>
       </div>
     </Card>
 
-    <div class="grid gap-3 md:grid-cols-4">
+    <div class="grid gap-3 md:grid-cols-5">
       <Card v-for="stat in stats" :key="stat.label" class="p-4">
         <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ stat.label }}</div>
         <div class="mt-2 text-2xl font-semibold tabular-nums">{{ stat.value }}</div>
@@ -49,7 +57,7 @@
             <p class="text-sm text-muted-foreground">Project-scoped drafts, reviews, and approvals.</p>
           </div>
           <button
-            v-for="requirement in requirements"
+            v-for="requirement in filteredRequirements"
             :key="requirement.id"
             class="block w-full p-4 text-left transition hover:bg-muted/40"
             :class="selectedId === requirement.id ? 'bg-accent/60' : ''"
@@ -63,7 +71,10 @@
             </div>
             <div class="mt-1 line-clamp-2 text-xs text-muted-foreground">{{ requirement.content }}</div>
           </button>
-          <div v-if="!requirements.length" class="p-4 text-sm text-muted-foreground">No managed requirements yet. Capture the first requirement, submit it for review, then approve it before AI generation.</div>
+          <div v-if="!filteredRequirements.length" class="p-4 text-sm text-muted-foreground">
+            <p>No requirements match the current filter.</p>
+            <p class="mt-1">Next step: capture the first requirement on the left.</p>
+          </div>
         </Card>
       </div>
 
@@ -75,9 +86,42 @@
               <p class="text-sm text-muted-foreground">Version {{ selected.version }} / {{ selected.status }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <Button variant="outline" :disabled="selected.status !== 'draft'" @click="submitReview">Submit review</Button>
-              <Button :disabled="selected.status !== 'reviewed'" @click="approveRequirement">Approve</Button>
-              <Button v-if="selectedApprovedVersion" as-child>
+              <Button
+                variant="outline"
+                :disabled="selected.status !== 'draft'"
+                data-testid="submit-review"
+                @click="submitReview"
+              >
+                Submit review
+              </Button>
+              <Button
+                :disabled="selected.status !== 'in-review'"
+                data-testid="approve"
+                @click="approveRequirement"
+              >
+                Approve
+              </Button>
+              <Button
+                variant="outline"
+                :disabled="selected.status !== 'in-review'"
+                data-testid="reject"
+                @click="confirmReject"
+              >
+                Reject
+              </Button>
+              <Button
+                variant="outline"
+                :disabled="selected.status === 'archived' || selected.status === 'approved'"
+                data-testid="archive"
+                @click="confirmArchive"
+              >
+                Archive
+              </Button>
+              <Button
+                v-if="selectedApprovedVersion"
+                as-child
+                data-testid="generate-cases"
+              >
                 <NuxtLink
                   :to="{
                     path: `/projects/${projectId}/ai-generation`,
@@ -86,6 +130,14 @@
                 >
                   Generate cases
                 </NuxtLink>
+              </Button>
+              <Button
+                v-if="canDelete"
+                variant="destructive"
+                data-testid="delete"
+                @click="confirmDelete"
+              >
+                Delete
               </Button>
             </div>
           </div>
@@ -119,20 +171,76 @@
               </div>
             </div>
             <div class="rounded-md border p-3">
-              <h4 class="font-medium">Approval records</h4>
+              <h4 class="font-medium">Approval history</h4>
               <div v-for="event in selected.reviewEvents" :key="event.id" class="mt-3 rounded-md bg-muted/40 p-3 text-sm">
                 <div class="font-medium">{{ event.action }} → {{ event.toStatus }}</div>
                 <div class="text-muted-foreground">{{ new Date(event.createdAt).toLocaleString() }}</div>
+              </div>
+              <div v-if="!selected.reviewEvents.length" class="mt-3 text-sm text-muted-foreground">
+                No review events yet. Submit the draft for review to start the approval flow.
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-2">
+            <div class="rounded-md border p-3">
+              <h4 class="font-medium">Related test cases</h4>
+              <div v-if="relatedCases.length" class="mt-3 grid gap-2">
+                <div
+                  v-for="testCase in relatedCases"
+                  :key="testCase.id"
+                  class="rounded-md bg-muted/40 p-3 text-sm"
+                >
+                  <div class="font-medium">{{ testCase.title }}</div>
+                  <div class="text-xs text-muted-foreground">
+                    {{ testCase.priority }} · {{ testCase.origin }} · {{ testCase.steps.length }} steps
+                  </div>
+                </div>
+              </div>
+              <div v-else class="mt-3 text-sm text-muted-foreground">
+                No test cases linked yet. Approve this requirement and click "Generate cases" to start.
+              </div>
+            </div>
+            <div class="rounded-md border p-3">
+              <h4 class="font-medium">Recent AI generation runs</h4>
+              <div v-if="recentAiRuns.length" class="mt-3 grid gap-2">
+                <div
+                  v-for="run in recentAiRuns"
+                  :key="run.id"
+                  class="rounded-md bg-muted/40 p-3 text-sm"
+                >
+                  <div class="font-medium">{{ run.status }}</div>
+                  <div class="text-xs text-muted-foreground">
+                    {{ new Date(run.startedAt).toLocaleString() }} · {{ run.draftCases.length }} drafts
+                  </div>
+                </div>
+              </div>
+              <div v-else class="mt-3 text-sm text-muted-foreground">
+                No AI generation runs yet. Approved requirements become eligible for "Generate cases".
               </div>
             </div>
           </div>
         </div>
 
         <div v-else class="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-          Select or create a requirement to review details, history, and approval records.
+          <p class="font-medium">No requirement selected</p>
+          <p class="mt-1">Select one from the list, or create a new draft to begin the review → approve → generate flow.</p>
         </div>
       </Card>
     </div>
+
+    <Dialog v-model:open="confirmOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ confirmTitle }}</DialogTitle>
+          <DialogDescription>{{ confirmDescription }}</DialogDescription>
+        </DialogHeader>
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="confirmOpen = false">Cancel</Button>
+          <Button :variant="confirmVariant" data-testid="confirm-action" @click="runConfirmed">Confirm</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -141,33 +249,72 @@ import { computed, onMounted, ref } from "vue";
 import { api } from "~/composables/api";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import type { RequirementDto, RequirementStatus } from "@crab/shared-types";
+import { Input } from "~/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import type {
+  AiWorkflowRunDto,
+  RequirementDto,
+  RequirementStatus,
+  TestCaseDto,
+} from "@crab/shared-types";
 
 const route = useRoute();
 const projectId = route.params.id as string;
 const loading = ref(false);
 const requirements = ref<RequirementDto[]>([]);
 const selectedId = ref("");
+const search = ref("");
 
 const createTitle = ref("");
 const createContent = ref("");
 const editDraft = ref({ title: "", content: "" });
+
+const relatedCases = ref<TestCaseDto[]>([]);
+const recentAiRuns = ref<AiWorkflowRunDto[]>([]);
+
+const confirmOpen = ref(false);
+const confirmTitle = ref("");
+const confirmDescription = ref("");
+const confirmVariant = ref<"default" | "destructive">("default");
+const confirmAction = ref<null | "reject" | "archive" | "delete">(null);
 
 const selected = computed(() => requirements.value.find((item) => item.id === selectedId.value) ?? null);
 const selectedApprovedVersion = computed(() => {
   if (selected.value?.status !== "approved") return null;
   return [...selected.value.versions].reverse().find((version) => version.status === "approved") ?? null;
 });
+const canDelete = computed(() => {
+  const status = selected.value?.status;
+  return status === "draft" || status === "rejected" || status === "archived";
+});
+const filteredRequirements = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return requirements.value;
+  return requirements.value.filter(
+    (r) => r.title.toLowerCase().includes(q) || r.content.toLowerCase().includes(q),
+  );
+});
 const stats = computed(() => [
   { label: "Total", value: requirements.value.length, detail: "Managed requirements" },
   { label: "Draft", value: countStatus("draft"), detail: "Needs refinement" },
-  { label: "Reviewed", value: countStatus("reviewed"), detail: "Ready for owner approval" },
+  { label: "In review", value: countStatus("in-review"), detail: "Awaiting owner decision" },
   { label: "Approved", value: countStatus("approved"), detail: "Eligible for AI generation" },
+  { label: "Rejected", value: countStatus("rejected"), detail: "Revise and resubmit" },
 ]);
 const canCreate = computed(() => createTitle.value.trim().length > 0 && createContent.value.trim().length > 0);
 const canUpdate = computed(
   () =>
     !!selected.value &&
+    (selected.value.status === "draft" ||
+      selected.value.status === "in-review" ||
+      selected.value.status === "rejected" ||
+      selected.value.status === "approved") &&
     editDraft.value.title.trim().length > 0 &&
     editDraft.value.content.trim().length > 0 &&
     (editDraft.value.title !== selected.value.title || editDraft.value.content !== selected.value.content),
@@ -181,8 +328,34 @@ async function load() {
     requirements.value = await api.requirements.list(projectId);
     if (!selectedId.value) selectedId.value = requirements.value[0]?.id ?? "";
     syncEditDraft();
+    await loadRelated();
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadRelated() {
+  if (!selected.value) {
+    relatedCases.value = [];
+    recentAiRuns.value = [];
+    return;
+  }
+  const approvedVersion = [...selected.value.versions]
+    .reverse()
+    .find((version) => version.status === "approved");
+  const allCases = await api.testCases.list(projectId);
+  relatedCases.value = approvedVersion
+    ? allCases.filter((c) => c.requirementVersionId === approvedVersion.id)
+    : [];
+  try {
+    const runs = await api.ai.list(projectId);
+    recentAiRuns.value = approvedVersion
+      ? runs
+          .filter((r) => r.requirementVersionId === approvedVersion.id)
+          .slice(0, 5)
+      : [];
+  } catch {
+    recentAiRuns.value = [];
   }
 }
 
@@ -193,6 +366,7 @@ function countStatus(status: RequirementStatus) {
 function selectRequirement(id: string) {
   selectedId.value = id;
   syncEditDraft();
+  loadRelated();
 }
 
 function syncEditDraft() {
@@ -232,11 +406,58 @@ async function approveRequirement() {
   await load();
 }
 
+function confirmReject() {
+  confirmAction.value = "reject";
+  confirmTitle.value = "Reject requirement";
+  confirmDescription.value =
+    "Rejection returns the requirement to the author for revision. The current version becomes rejected and can be edited back to draft.";
+  confirmVariant.value = "default";
+  confirmOpen.value = true;
+}
+
+function confirmArchive() {
+  confirmAction.value = "archive";
+  confirmTitle.value = "Archive requirement";
+  confirmDescription.value =
+    "Archiving removes the requirement from active lists without deleting history. Archived items can be deleted later.";
+  confirmVariant.value = "default";
+  confirmOpen.value = true;
+}
+
+function confirmDelete() {
+  confirmAction.value = "delete";
+  confirmTitle.value = "Delete requirement";
+  confirmDescription.value =
+    "Deletion is permanent and removes all version history and review events. Only draft, rejected, or archived requirements can be deleted.";
+  confirmVariant.value = "destructive";
+  confirmOpen.value = true;
+}
+
+async function runConfirmed() {
+  if (!selected.value || !confirmAction.value) return;
+  const action = confirmAction.value;
+  confirmOpen.value = false;
+  confirmAction.value = null;
+  if (action === "reject") {
+    const updated = await api.requirements.reject(projectId, selected.value.id);
+    selectedId.value = updated.id;
+  } else if (action === "archive") {
+    const updated = await api.requirements.archive(projectId, selected.value.id);
+    selectedId.value = updated.id;
+  } else if (action === "delete") {
+    await api.requirements.remove(projectId, selected.value.id);
+    selectedId.value = "";
+  }
+  await load();
+}
+
 function statusClass(status: RequirementStatus) {
   return {
     draft: "bg-slate-100 text-slate-700",
-    reviewed: "bg-blue-100 text-blue-700",
+    "in-review": "bg-blue-100 text-blue-700",
     approved: "bg-emerald-100 text-emerald-700",
+    rejected: "bg-rose-100 text-rose-700",
+    archived: "bg-zinc-200 text-zinc-700",
   }[status];
 }
 </script>

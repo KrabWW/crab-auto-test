@@ -343,6 +343,15 @@ export class AiOrchestrationService {
     return this.toDto(run);
   }
 
+  async listForProject(projectId: string): Promise<AiWorkflowRunDto[]> {
+    const rows = await this.prisma.aiWorkflowRun.findMany({
+      where: { projectId },
+      include: { inputs: true },
+      orderBy: { startedAt: "desc" },
+    });
+    return rows.map((row) => this.toDto(row));
+  }
+
   /** R8 snapshot refetch — authoritative run state on reconnect. */
   snapshotFor(runId: string): { runId: string; events: StreamEnvelope[] } {
     return { runId, events: this.snapshot.snapshot(runId) };

@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+﻿import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { CurrentUser, type RequestUser } from "../../common/auth.decorators";
 import { SessionAuthGuard } from "../auth/session-auth.guard";
 import { MembershipGuard } from "../projects/membership.guard";
@@ -60,5 +60,33 @@ export class RequirementsController {
     @CurrentUser() user: RequestUser,
   ) {
     return this.requirements.approve(projectId, requirementId, user.userId);
+  }
+
+  @Post("requirements/:requirementId/reject")
+  reject(
+    @Param("projectId") projectId: string,
+    @Param("requirementId") requirementId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.requirements.reject(projectId, requirementId, user.userId);
+  }
+
+  @Post("requirements/:requirementId/archive")
+  archive(
+    @Param("projectId") projectId: string,
+    @Param("requirementId") requirementId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.requirements.archive(projectId, requirementId, user.userId);
+  }
+
+  @Delete("requirements/:requirementId")
+  async delete(
+    @Param("projectId") projectId: string,
+    @Param("requirementId") requirementId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    await this.requirements.delete(projectId, requirementId, user.userId);
+    return { ok: true };
   }
 }

@@ -196,6 +196,18 @@ export const api = {
       request<RequirementDto>(`/projects/${projectId}/requirements/${requirementId}/approve`, {
         method: "POST",
       }),
+    reject: (projectId: string, requirementId: string) =>
+      request<RequirementDto>(`/projects/${projectId}/requirements/${requirementId}/reject`, {
+        method: "POST",
+      }),
+    archive: (projectId: string, requirementId: string) =>
+      request<RequirementDto>(`/projects/${projectId}/requirements/${requirementId}/archive`, {
+        method: "POST",
+      }),
+    remove: (projectId: string, requirementId: string) =>
+      request<{ ok: boolean }>(`/projects/${projectId}/requirements/${requirementId}`, {
+        method: "DELETE",
+      }),
   },
   chat: {
     listSessions: (projectId: string) => request<ChatSessionDto[]>(`/projects/${projectId}/chat/sessions`),
@@ -263,6 +275,8 @@ export const api = {
   ai: {
     start: (projectId: string, req: Omit<StartTestGenerationRequest, "projectId">) =>
       request<AiWorkflowRunDto>(`/projects/${projectId}/ai/test-generation`, { method: "POST", body: JSON.stringify(req) }),
+    list: (projectId: string) =>
+      request<AiWorkflowRunDto[]>(`/projects/${projectId}/ai/runs`),
     get: (projectId: string, runId: string) =>
       request<AiWorkflowRunDto>(`/projects/${projectId}/ai/runs/${runId}`),
     approve: (projectId: string, runId: string) =>
