@@ -28,11 +28,28 @@ export class RetrievalBackendService implements RetrievalBackend {
   readonly backendName = "pgvector";
   private readonly logger = new Logger(RetrievalBackendService.name);
   private infrastructureReady: Promise<void> | null = null;
+  /**
+   * Per-project stub-vector flag. True when at least one embed() call degraded
+   * to a stub vector (no provider configured, provider returned non-1536 dims,
+   * or provider returned non-2xx). UI surfaces this so testers do not mistake
+   * deterministic-hash retrieval for production-quality RAG.
+   */
+  private readonly stubByProject = new Map<string, boolean>();
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly providers: ModelProvidersService,
   ) {}
+
+  isUsingStubVectors(projectId: string): boolean {
+    return this.stubByProject.get(projectId) ?? false;
+  }
+
+  /** Mark stub state for a project. Public so callers (e.g. KnowledgeService)
+   * can hint from per-chunk ingest flows where embed() doesn't know projectId. */
+  markStubForProject(projectId: string, value: boolean): void {
+    this.stubByProject.set(projectId, value);
+  }
 
   async embed(text: string): Promise<number[]> {
     const provider = await this.tryEmbeddingsProvider();
@@ -62,6 +79,39 @@ export class RetrievalBackendService implements RetrievalBackend {
     return this.stubVector(text);
   }
 
+  async embedForProject(projectId: string, text: string): Promise<number[]> {
+    const provider = await this.tryEmbeddingsProvider();
+    if (provider) {
+      try {
+        const res = await fetch(`${provider.baseUrl}/embeddings`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${provider.credential}`,
+          },
+          body: JSON.stringify({ model: provider.modelName, input: text.slice(0, 8000) }),
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { data?: Array<{ embedding?: number[] }> };
+          const vec = json.data?.[0]?.embedding;
+          if (vec?.length === PGVECTOR_DIMS) {
+            this.markStubForProject(projectId, false);
+            return vec;
+          }
+          if (vec?.length) {
+            this.logger.warn(`embeddings provider returned ${vec.length} dims; expected ${PGVECTOR_DIMS}; using stub vector`);
+          }
+        } else {
+          this.logger.warn(`embeddings provider ${provider.baseUrl} returned ${res.status}; using stub vector`);
+        }
+      } catch (err) {
+        this.logger.warn(`embeddings provider call failed: ${(err as Error).message}; using stub vector`);
+      }
+    }
+    this.markStubForProject(projectId, true);
+    return this.stubVector(text);
+  }
+
   async store(chunkId: string, embedding: number[], _model: string): Promise<string> {
     await this.ensureInfrastructure();
     const id = chunkId; // vectorRef = chunkId (1:1 with embedding_vector row)
@@ -80,7 +130,7 @@ export class RetrievalBackendService implements RetrievalBackend {
     topK = 5,
   ): Promise<RetrievedChunk[]> {
     await this.ensureInfrastructure();
-    const qv = await this.embed(queryText);
+    const qv = await this.embedForProject(projectId, queryText);
     const qLit = `[${qv.join(",")}]`;
     // R9: raw SQL ANN (cosine distance) over the raw embedding_vector table,
     // joined back to DocumentChunk + Document + KnowledgeBase for project scoping.
@@ -125,6 +175,7 @@ export class RetrievalBackendService implements RetrievalBackend {
       selectedSources: matched.map((m) => m.chunkId),
       backend: this.backendName,
       model: "openai-embeddings-or-stub",
+      usingStubVectors: this.isUsingStubVectors(projectId),
     };
   }
 

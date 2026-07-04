@@ -166,6 +166,13 @@
               <div class="text-sm text-muted-foreground">
                 {{ diagResult.backend }} / {{ diagResult.model }} / query: {{ diagResult.query }}
               </div>
+              <div
+                v-if="diagResult.usingStubVectors"
+                class="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800"
+                data-testid="kb-stub-vector-warning"
+              >
+                <strong>Stub-vector mode.</strong> No embeddings provider is configured (or it returned unexpected dimensions), so retrieval is using a deterministic-hash fallback. Results are useful for plumbing tests but are <em>not</em> production-quality semantic matches. Configure an embeddings provider in project settings to enable real retrieval.
+              </div>
               <div v-if="!diagResult.matchedChunks.length" class="mt-3 text-sm text-muted-foreground">No matches.</div>
               <div v-for="match in diagResult.matchedChunks" :key="match.chunkId" class="mt-3 rounded-md border p-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">

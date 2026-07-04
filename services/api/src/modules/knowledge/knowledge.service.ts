@@ -98,7 +98,7 @@ export class KnowledgeService {
           sourceMetadata: { filename: input.filename, section: c.section, page: c.page, order: i },
         },
       });
-      const embedding = await this.retrieval.embed(c.text);
+      const embedding = await this.retrieval.embedForProject(projectId, c.text);
       const vectorRef = await this.retrieval.store(chunk.id, embedding, "openai-embeddings-or-stub");
       await this.prisma.embeddingRef.create({
         data: {
@@ -232,6 +232,7 @@ export class KnowledgeService {
           .map((item) => toSourceAttribution(item.chunkId, item.documentId, item.filename, item.sourceMetadata, item.score)),
         backend: diag.backend,
         model: diag.model,
+        usingStubVectors: diag.usingStubVectors,
       };
     } catch (err) {
       await this.logRetrieval({

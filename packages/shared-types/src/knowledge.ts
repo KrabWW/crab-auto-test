@@ -81,6 +81,7 @@ export interface KnowledgeRetrievalDiagnosticDto {
   selectedSources: KnowledgeSourceAttributionDto[];
   backend: string;
   model: string;
+  usingStubVectors: boolean;
 }
 
 // ─── Retrieval query log (observability for testers) ───────────────────────

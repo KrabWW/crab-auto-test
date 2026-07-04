@@ -28,6 +28,7 @@ export interface RetrievalDiagnostic {
   selectedSources: string[];
   backend: string;
   model: string;
+  usingStubVectors: boolean;
 }
 
 export interface RetrievalBackend {
@@ -35,6 +36,13 @@ export interface RetrievalBackend {
 
   /** Embed text into a vector. */
   embed(text: string): Promise<number[]>;
+
+  /**
+   * Embed text into a vector for a specific project, tracking per-project
+   * stub-vector state so the UI can warn testers when retrieval is using
+   * deterministic-hash fallback instead of real embeddings.
+   */
+  embedForProject(projectId: string, text: string): Promise<number[]>;
 
   /** Store an embedding for a chunk, returning the opaque vectorRef. */
   store(chunkId: string, embedding: number[], model: string): Promise<string>;
@@ -45,6 +53,9 @@ export interface RetrievalBackend {
     queryText: string,
     topK?: number,
   ): Promise<RetrievedChunk[]>;
+
+  /** Whether the project's last embed call degraded to a stub vector. */
+  isUsingStubVectors(projectId: string): boolean;
 
   /** Diagnostics for a query (knowledge-rag.5). */
   diagnose(

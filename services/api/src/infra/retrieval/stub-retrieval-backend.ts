@@ -30,6 +30,14 @@ export class StubRetrievalBackend implements RetrievalBackend {
     return vec.map((v) => v / norm);
   }
 
+  async embedForProject(_projectId: string, text: string): Promise<number[]> {
+    return this.embed(text);
+  }
+
+  isUsingStubVectors(_projectId: string): boolean {
+    return true;
+  }
+
   async store(chunkId: string, _embedding: number[], _model: string): Promise<string> {
     return chunkId;
   }
@@ -55,6 +63,7 @@ export class StubRetrievalBackend implements RetrievalBackend {
       selectedSources: matched.map((m) => m.chunkId),
       backend: this.backendName,
       model: "stub",
+      usingStubVectors: true,
     };
   }
 
