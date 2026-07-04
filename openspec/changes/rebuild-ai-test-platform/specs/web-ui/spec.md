@@ -26,3 +26,13 @@ The web UI SHALL support project navigation, test case management, AI generation
 
 - **WHEN** a project member signs in
 - **THEN** the user MUST be able to access project-scoped testing workflows from the Nuxt application shell.
+
+#### Scenario: Project member reviews the project workspace
+
+- **WHEN** a project member opens the project overview
+- **THEN** the UI MUST present a project-scoped workspace summary with testing assets, automation, execution, knowledge, AI, MCP, and skills signals plus quick routes into the primary workflows.
+
+#### Scenario: Project workspace data is partially unavailable
+
+- **WHEN** workspace summary data cannot be loaded
+- **THEN** the UI MUST show a visible recovery state and MUST NOT silently present stale or cross-project counts.

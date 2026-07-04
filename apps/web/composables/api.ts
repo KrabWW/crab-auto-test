@@ -7,8 +7,10 @@
  */
 import type {
   SessionDto,
+  UserDto,
   LoginRequest,
   ProjectDto,
+  ProjectWorkspaceSummaryDto,
   CreateProjectRequest,
   TestCaseDto,
   CreateTestCaseRequest,
@@ -92,12 +94,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   auth: {
     login: (req: LoginRequest) => request<SessionDto>("/auth/login", { method: "POST", body: JSON.stringify(req) }),
-    me: () => request<{ id: string; email: string; displayName: string }>("/auth/me"),
+    me: () => request<UserDto>("/auth/me"),
   },
   projects: {
     list: () => request<ProjectDto[]>("/projects"),
     create: (req: CreateProjectRequest) => request<ProjectDto>("/projects", { method: "POST", body: JSON.stringify(req) }),
     get: (id: string) => request<ProjectDto>(`/projects/${id}`),
+    workspaceSummary: (id: string) => request<ProjectWorkspaceSummaryDto>(`/projects/${id}/workspace-summary`),
   },
   testCases: {
     list: (projectId: string) => request<TestCaseDto[]>(`/projects/${projectId}/test-cases`),

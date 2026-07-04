@@ -3,8 +3,8 @@
  * Project workspace navigation — shadcn-vue + Tailwind + NuxtLink + lucide.
  *
  * Project-scoped horizontal tab nav rendered above <NuxtPage /> on the project
- * workspace shell ([id].vue). Active state is derived from useRoute().path via
- * exact leaf-route match, so only the currently-active tab is marked current.
+ * workspace shell ([id].vue). Active state is derived from useRoute().path and
+ * remains on the parent workflow tab for detail routes.
  *
  * Clean-room: independently designed. No upstream layout/component copy, no
  * Arco.
@@ -55,9 +55,8 @@ const entries = computed<NavEntry[]>(() => {
   ];
 });
 
-/** Exact match against the leaf route path (no descendant matching). */
 function isActive(to: string): boolean {
-  return route.path === to;
+  return route.path === to || route.path.startsWith(`${to}/`);
 }
 </script>
 

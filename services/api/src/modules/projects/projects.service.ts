@@ -11,6 +11,7 @@ import type {
   UpdateProjectRequest,
   ProjectMemberDto,
   AddMemberRequest,
+  ProjectWorkspaceSummaryDto,
 } from "@crab/shared-types";
 
 /** platform-foundation.2: project CRUD + simple owner/member roles (no RBAC). */
@@ -65,6 +66,73 @@ export class ProjectsService {
     });
     if (!p) throw new NotFoundException("Project not found");
     return this.toDto(p);
+  }
+
+  async getWorkspaceSummary(projectId: string): Promise<ProjectWorkspaceSummaryDto> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundException("Project not found");
+
+    const [
+      testCases,
+      testSuites,
+      executions,
+      queuedExecutions,
+      failedExecutions,
+      apiCases,
+      apiExecutions,
+      requirements,
+      approvedRequirements,
+      knowledgeBases,
+      knowledgeDocuments,
+      chatSessions,
+      mcpTools,
+      approvedMcpTools,
+      skills,
+      enabledSkills,
+    ] = await Promise.all([
+      this.prisma.testCase.count({ where: { projectId } }),
+      this.prisma.testSuite.count({ where: { projectId } }),
+      this.prisma.testExecution.count({ where: { projectId } }),
+      this.prisma.testExecution.count({ where: { projectId, status: "queued" } }),
+      this.prisma.testExecution.count({ where: { projectId, status: "failed" } }),
+      this.prisma.apiTestCase.count({ where: { projectId } }),
+      this.prisma.apiExecution.count({ where: { projectId } }),
+      this.prisma.requirement.count({ where: { projectId } }),
+      this.prisma.requirement.count({ where: { projectId, status: "approved" } }),
+      this.prisma.knowledgeBase.count({ where: { projectId } }),
+      this.prisma.document.count({ where: { knowledgeBase: { projectId } } }),
+      this.prisma.chatSession.count({ where: { projectId } }),
+      this.prisma.mcpTool.count({ where: { projectId } }),
+      this.prisma.mcpTool.count({ where: { projectId, status: "approved" } }),
+      this.prisma.skillInstallation.count({ where: { projectId } }),
+      this.prisma.skillInstallation.count({ where: { projectId, state: "installed" } }),
+    ]);
+
+    return {
+      projectId,
+      generatedAt: new Date().toISOString(),
+      counts: {
+        testCases,
+        testSuites,
+        executions,
+        queuedExecutions,
+        failedExecutions,
+        apiCases,
+        apiExecutions,
+        requirements,
+        approvedRequirements,
+        knowledgeBases,
+        knowledgeDocuments,
+        chatSessions,
+        mcpTools,
+        approvedMcpTools,
+        skills,
+        enabledSkills,
+      },
+    };
   }
 
   async update(

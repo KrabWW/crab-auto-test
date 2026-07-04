@@ -35,3 +35,26 @@ export interface AddMemberRequest {
   userId: string;
   role: ProjectRole;
 }
+
+export interface ProjectWorkspaceSummaryDto {
+  projectId: string;
+  generatedAt: string;
+  counts: {
+    testCases: number;
+    testSuites: number;
+    executions: number;
+    queuedExecutions: number;
+    failedExecutions: number;
+    apiCases: number;
+    apiExecutions: number;
+    requirements: number;
+    approvedRequirements: number;
+    knowledgeBases: number;
+    knowledgeDocuments: number;
+    chatSessions: number;
+    mcpTools: number;
+    approvedMcpTools: number;
+    skills: number;
+    enabledSkills: number;
+  };
+}

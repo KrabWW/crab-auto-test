@@ -38,6 +38,12 @@ export class ProjectsController {
     return this.projects.get(projectId);
   }
 
+  @Get(":projectId/workspace-summary")
+  @UseGuards(MembershipGuard)
+  workspaceSummary(@Param("projectId") projectId: string) {
+    return this.projects.getWorkspaceSummary(projectId);
+  }
+
   @Patch(":projectId")
   @UseGuards(MembershipGuard)
   update(

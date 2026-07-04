@@ -1,77 +1,63 @@
 /**
- * useProjectOverview — aggregates lightweight counts for a project's overview
- * home page by composing existing list endpoints client-side.
+ * Project workspace summary composable.
  *
- * Uses Promise.allSettled so a 401/404 on one endpoint does not break the
- * others. SSR-safe: only calls the api on the client (api.ts reads the token
- * from localStorage on the client only).
+ * The overview page uses one project-scoped backend summary endpoint instead
+ * of stitching together multiple list endpoints in the browser. That keeps the
+ * dashboard fast, avoids partial stale counts, and leaves project membership
+ * enforcement on the API boundary.
  */
-import { type MaybeRef, ref, unref, watch } from "vue";
+import { type MaybeRef, computed, ref, unref, watch } from "vue";
 import { api } from "~/composables/api";
+import type { ProjectWorkspaceSummaryDto } from "@crab/shared-types";
 
-export interface ProjectCounts {
-  testCases: number;
-  executions: number;
-  knowledgeBases: number;
-  aiRuns: number;
-}
+const emptyCounts: ProjectWorkspaceSummaryDto["counts"] = {
+  testCases: 0,
+  testSuites: 0,
+  executions: 0,
+  queuedExecutions: 0,
+  failedExecutions: 0,
+  apiCases: 0,
+  apiExecutions: 0,
+  requirements: 0,
+  approvedRequirements: 0,
+  knowledgeBases: 0,
+  knowledgeDocuments: 0,
+  chatSessions: 0,
+  mcpTools: 0,
+  approvedMcpTools: 0,
+  skills: 0,
+  enabledSkills: 0,
+};
 
 export function useProjectOverview(projectId: MaybeRef<string>) {
-  const counts = ref<ProjectCounts>({
-    testCases: 0,
-    executions: 0,
-    knowledgeBases: 0,
-    aiRuns: 0,
-  });
+  const summary = ref<ProjectWorkspaceSummaryDto | null>(null);
   const loading = ref(false);
   const error = ref<Error | null>(null);
+  const counts = computed(() => summary.value?.counts ?? emptyCounts);
 
   async function refresh() {
-    // SSR guard: api.ts reads the auth token from localStorage, which only
-    // exists on the client. Skip fetching during SSR.
     if (!import.meta.client) return;
     const id = unref(projectId);
     if (!id) return;
 
     loading.value = true;
     error.value = null;
-
-    const results = await Promise.allSettled([
-      api.testCases.list(id),
-      api.executions.list(id),
-      api.knowledge.listKbs(id),
-      // AI has no list endpoint in api.ts; resolve 0 so the slot stays
-      // composable-backed and never throws.
-      Promise.resolve([]),
-    ]);
-
-    const next: ProjectCounts = {
-      testCases: 0,
-      executions: 0,
-      knowledgeBases: 0,
-      aiRuns: 0,
-    };
-    const errors: Error[] = [];
-
-    const [tc, ex, kb] = results;
-    if (tc.status === "fulfilled") next.testCases = tc.value.length;
-    else errors.push(tc.reason instanceof Error ? tc.reason : new Error(String(tc.reason)));
-    if (ex.status === "fulfilled") next.executions = ex.value.length;
-    else errors.push(ex.reason instanceof Error ? ex.reason : new Error(String(ex.reason)));
-    if (kb.status === "fulfilled") next.knowledgeBases = kb.value.length;
-    else errors.push(kb.reason instanceof Error ? kb.reason : new Error(String(kb.reason)));
-
-    counts.value = next;
-    error.value = errors.length ? errors[0]! : null;
-    loading.value = false;
+    summary.value = null;
+    try {
+      summary.value = await api.projects.workspaceSummary(id);
+    } catch (err) {
+      summary.value = null;
+      error.value = err instanceof Error ? err : new Error(String(err));
+    } finally {
+      loading.value = false;
+    }
   }
 
-  // Re-fetch when the project id ref changes.
   watch(
     () => unref(projectId),
     () => void refresh(),
     { immediate: true },
   );
 
-  return { counts, loading, error, refresh };
+  return { counts, summary, loading, error, refresh };
 }
