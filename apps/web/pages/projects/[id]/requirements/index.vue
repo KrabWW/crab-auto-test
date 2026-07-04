@@ -21,6 +21,72 @@
       </div>
     </Card>
 
+    <Card class="p-4">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-primary">Source documents</p>
+          <h3 class="mt-1 text-lg font-semibold">Upload a requirements document</h3>
+          <p class="text-sm text-muted-foreground">
+            Upload a PRD / Confluence export (pdf / docx / txt / md / html). We extract the text and prepare it for AI module splitting and review.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <Button variant="outline" :disabled="uploading" data-testid="requirement-document-pick" @click="pickFile">
+            {{ uploading ? "Uploading..." : "Choose file" }}
+          </Button>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".pdf,.docx,.txt,.md,.markdown,.html,.htm"
+            class="sr-only"
+            data-testid="requirement-document-input"
+            :disabled="uploading"
+            @change="onFilePicked"
+          />
+          <Button variant="outline" :disabled="loadingDocs" @click="loadDocuments">Reload documents</Button>
+        </div>
+      </div>
+      <div v-if="uploadError" class="mt-3 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive" data-testid="requirement-document-error">
+        {{ uploadError }}
+      </div>
+      <div class="mt-4 overflow-hidden rounded-md border">
+        <div class="grid grid-cols-[1fr_120px_140px_100px] bg-muted/60 px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div>Filename</div>
+          <div>Size</div>
+          <div>Status</div>
+          <div>Actions</div>
+        </div>
+        <div
+          v-for="doc in documents"
+          :key="doc.id"
+          class="grid grid-cols-[1fr_120px_140px_100px] items-center border-t px-3 py-3 text-sm"
+        >
+          <div class="min-w-0">
+            <NuxtLink
+              :to="`/projects/${projectId}/requirements/${doc.id}`"
+              class="truncate font-medium text-primary hover:underline"
+              :data-testid="`requirement-document-row-${doc.id}`"
+            >
+              {{ doc.filename }}
+            </NuxtLink>
+            <div class="truncate text-xs text-muted-foreground">{{ doc.mimeType }}</div>
+          </div>
+          <div class="tabular-nums">{{ formatBytes(doc.sizeBytes) }}</div>
+          <div>
+            <span class="rounded-full px-2 py-1 text-xs" :class="documentStatusClass(doc.status)">
+              {{ doc.status }}
+            </span>
+          </div>
+          <div>
+            <Button variant="outline" size="sm" @click="deleteDocument(doc.id)">Delete</Button>
+          </div>
+        </div>
+        <div v-if="!documents.length" class="p-4 text-sm text-muted-foreground">
+          No source documents yet. Upload a PRD or requirements PDF to start the AI module split and review flow.
+        </div>
+      </div>
+    </Card>
+
     <div class="grid gap-3 md:grid-cols-5">
       <Card v-for="stat in stats" :key="stat.label" class="p-4">
         <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ stat.label }}</div>
@@ -259,6 +325,8 @@ import {
 } from "~/components/ui/dialog";
 import type {
   AiWorkflowRunDto,
+  RequirementDocumentDto,
+  RequirementDocumentStatus,
   RequirementDto,
   RequirementStatus,
   TestCaseDto,
@@ -283,6 +351,12 @@ const confirmTitle = ref("");
 const confirmDescription = ref("");
 const confirmVariant = ref<"default" | "destructive">("default");
 const confirmAction = ref<null | "reject" | "archive" | "delete">(null);
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const uploading = ref(false);
+const uploadError = ref("");
+const documents = ref<RequirementDocumentDto[]>([]);
+const loadingDocs = ref(false);
 
 const selected = computed(() => requirements.value.find((item) => item.id === selectedId.value) ?? null);
 const selectedApprovedVersion = computed(() => {
@@ -329,9 +403,63 @@ async function load() {
     if (!selectedId.value) selectedId.value = requirements.value[0]?.id ?? "";
     syncEditDraft();
     await loadRelated();
+    await loadDocuments();
   } finally {
     loading.value = false;
   }
+}
+
+async function loadDocuments() {
+  loadingDocs.value = true;
+  try {
+    documents.value = await api.requirementDocuments.list(projectId);
+  } catch {
+    documents.value = [];
+  } finally {
+    loadingDocs.value = false;
+  }
+}
+
+function pickFile() {
+  // Kept for backwards compatibility; the label now wraps the input directly.
+  fileInput.value?.click();
+}
+
+async function onFilePicked(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  uploading.value = true;
+  uploadError.value = "";
+  try {
+    await api.requirementDocuments.upload(projectId, file);
+    await loadDocuments();
+  } catch (err) {
+    uploadError.value = (err as Error).message ?? "Upload failed";
+  } finally {
+    uploading.value = false;
+    input.value = "";
+  }
+}
+
+async function deleteDocument(docId: string) {
+  await api.requirementDocuments.remove(projectId, docId);
+  await loadDocuments();
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function documentStatusClass(status: RequirementDocumentStatus) {
+  return {
+    uploaded: "bg-slate-100 text-slate-700",
+    processing: "bg-blue-100 text-blue-700",
+    extracted: "bg-emerald-100 text-emerald-700",
+    failed: "bg-rose-100 text-rose-700",
+  }[status];
 }
 
 async function loadRelated() {

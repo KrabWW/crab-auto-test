@@ -35,6 +35,7 @@ import type {
   ApiExecutionDto,
   CreateApiRunRequest,
   RequirementDto,
+  RequirementDocumentDto,
   RequirementVersionDto,
   CreateRequirementRequest,
   UpdateRequirementRequest,
@@ -206,6 +207,35 @@ export const api = {
       }),
     remove: (projectId: string, requirementId: string) =>
       request<{ ok: boolean }>(`/projects/${projectId}/requirements/${requirementId}`, {
+        method: "DELETE",
+      }),
+  },
+  requirementDocuments: {
+    list: (projectId: string) =>
+      request<RequirementDocumentDto[]>(`/projects/${projectId}/requirements/documents`),
+    get: (projectId: string, docId: string) =>
+      request<RequirementDocumentDto>(`/projects/${projectId}/requirements/documents/${docId}`),
+    upload: async (projectId: string, file: File): Promise<RequirementDocumentDto> => {
+      const form = new FormData();
+      form.append("file", file);
+      const token = (typeof localStorage !== "undefined" && localStorage.getItem("crab.token")) || "";
+      const res = await fetch(`${API_BASE}/projects/${projectId}/requirements/documents`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ message: res.statusText }));
+        throw Object.assign(new Error(body.message ?? res.statusText), { status: res.status });
+      }
+      return (await res.json()) as RequirementDocumentDto;
+    },
+    extract: (projectId: string, docId: string) =>
+      request<RequirementDocumentDto>(`/projects/${projectId}/requirements/documents/${docId}/extract`, {
+        method: "POST",
+      }),
+    remove: (projectId: string, docId: string) =>
+      request<{ ok: boolean }>(`/projects/${projectId}/requirements/documents/${docId}`, {
         method: "DELETE",
       }),
   },
