@@ -19,6 +19,7 @@ import { TestSuitesModule } from "./modules/test-suites/test-suites.module";
 import { ApiAutomationModule } from "./modules/api-automation/api-automation.module";
 import { RequirementsModule } from "./modules/requirements/requirements.module";
 import { LlmChatModule } from "./modules/llm-chat/llm-chat.module";
+import { UiAutomationModule } from "./modules/ui-automation/ui-automation.module";
 import { HealthController } from "./health.controller";
 
 @Module({
@@ -43,6 +44,7 @@ import { HealthController } from "./health.controller";
     ApiAutomationModule,
     RequirementsModule,
     LlmChatModule,
+    UiAutomationModule,
   ],
   controllers: [HealthController],
 })
