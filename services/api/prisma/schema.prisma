@@ -39,6 +39,7 @@ model User {
   createdRequirements Requirement[]
   requirementEvents RequirementReviewEvent[]
   uploadedRequirementDocuments RequirementDocument[]
+  createdUiPageObjects UiPageObject[]
   chatSessions    ChatSession[]
   chatMessages    ChatMessage[]
   chatArtifacts   ChatGeneratedArtifact[]
@@ -61,6 +62,9 @@ model Project {
   testSuites     TestSuite[]
   suiteRuns      SuiteRun[]
   executions     TestExecution[]
+  uiPageObjects  UiPageObject[]
+  uiLocators     UiLocator[]
+  uiPageSteps    UiPageStep[]
   apiSecrets     ApiSecret[]
   apiEnvironments ApiEnvironment[]
   apiCases       ApiTestCase[]
@@ -324,6 +328,68 @@ model TestStep {
   testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
 
   @@index([testCaseId, order])
+}
+
+// Phase 4: UI automation asset workbench. Reusable page objects, locators,
+// and page steps that testers manage as first-class assets — independent of
+// individual test cases. Mirrors WHartTest's page-object/locator/page-step
+// model without copying its implementation.
+model UiPageObject {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  urlPattern  String?
+  description String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator   User          @relation(fields: [createdBy], references: [id])
+  locators  UiLocator[]
+  steps     UiPageStep[]
+
+  @@unique([projectId, name])
+  @@index([projectId, createdAt])
+}
+
+model UiLocator {
+  id            String   @id @default(cuid())
+  pageObjectId  String
+  projectId     String
+  name          String
+  strategy      String   // "css" | "xpath" | "id" | "data-testid" | "text"
+  value         String
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pageObject UiPageObject @relation(fields: [pageObjectId], references: [id], onDelete: Cascade)
+  project    Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([pageObjectId, name])
+  @@index([pageObjectId])
+  @@index([projectId])
+}
+
+model UiPageStep {
+  id            String   @id @default(cuid())
+  pageObjectId  String
+  projectId     String
+  order         Int
+  action        String   // "navigate" | "click" | "fill" | "assert" | "wait"
+  locatorId     String?
+  value         String?
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pageObject UiPageObject @relation(fields: [pageObjectId], references: [id], onDelete: Cascade)
+  project    Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([pageObjectId, order])
+  @@index([pageObjectId, order])
+  @@index([projectId])
 }
 
 // Phase 3: requirement document ingestion. Source documents (pdf/docx/txt/md/html)

@@ -4,6 +4,7 @@ export * from "./worker";
 export * from "./auth";
 export * from "./project";
 export * from "./test-asset";
+export * from "./ui-automation";
 export * from "./execution";
 export * from "./api-automation";
 export * from "./api-scenarios";
