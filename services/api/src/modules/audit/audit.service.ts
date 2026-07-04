@@ -31,17 +31,22 @@ export class AuditService {
   }
 
   async query(q: AuditQuery): Promise<AuditLogDto[]> {
+    const projectId = typeof q.projectId === "string" && q.projectId ? q.projectId : undefined;
+    const actorId = typeof q.actorId === "string" && q.actorId ? q.actorId : undefined;
+    const action = typeof q.action === "string" && q.action ? q.action : undefined;
+    const parsedLimit = Number(q.limit);
+    const take = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 500) : 100;
     const rows = await this.prisma.auditLog.findMany({
       where: {
-        projectId: q.projectId,
-        actorId: q.actorId,
-        action: q.action,
-        createdAt: q.from
-          ? { gte: new Date(q.from), ...(q.to ? { lte: new Date(q.to) } : {}) }
-          : undefined,
+        ...(projectId ? { projectId } : {}),
+        ...(actorId ? { actorId } : {}),
+        ...(action ? { action } : {}),
+        ...(q.from
+          ? { createdAt: { gte: new Date(q.from), ...(q.to ? { lte: new Date(q.to) } : {}) } }
+          : {}),
       },
       orderBy: { createdAt: "desc" },
-      take: q.limit ?? 100,
+      take,
     });
     return rows.map((r): AuditLogDto => ({
       id: r.id,

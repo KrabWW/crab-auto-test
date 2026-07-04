@@ -9,6 +9,7 @@ import type {
   SessionDto,
   UserDto,
   LoginRequest,
+  AuditLogDto,
   ProjectDto,
   ProjectWorkspaceSummaryDto,
   CreateProjectRequest,
@@ -119,6 +120,10 @@ export const api = {
     create: (req: CreateProjectRequest) => request<ProjectDto>("/projects", { method: "POST", body: JSON.stringify(req) }),
     get: (id: string) => request<ProjectDto>(`/projects/${id}`),
     workspaceSummary: (id: string) => request<ProjectWorkspaceSummaryDto>(`/projects/${id}/workspace-summary`),
+  },
+  audit: {
+    query: (queryString: string) =>
+      request<AuditLogDto[]>(`/audit${queryString ? `?${queryString}` : ""}`),
   },
   testCases: {
     list: (projectId: string) => request<TestCaseDto[]>(`/projects/${projectId}/test-cases`),
