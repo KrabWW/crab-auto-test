@@ -7,7 +7,15 @@
           <h2 class="text-xl font-bold">Test Suites</h2>
           <p class="text-sm text-muted-foreground">Group cases, control execution order, and inspect suite run status.</p>
         </div>
-        <Button :disabled="!isReady" @click="showNew = !showNew">{{ showNew ? "Close" : "New suite" }}</Button>
+        <div class="flex items-center gap-2">
+          <Input
+            v-model="search"
+            data-testid="suite-search"
+            placeholder="Search suites"
+            class="h-9 w-56"
+          />
+          <Button :disabled="!isReady" @click="showNew = !showNew">{{ showNew ? "Close" : "New suite" }}</Button>
+        </div>
       </div>
     </Card>
 
@@ -19,7 +27,14 @@
       </Card>
     </div>
 
-    <Card v-if="showNew" class="animate-slide-in p-4">
+    <div v-if="!isReady" class="grid gap-3">
+      <Card v-for="i in 2" :key="i" class="p-4">
+        <div class="h-4 w-1/3 animate-pulse rounded bg-muted"></div>
+        <div class="mt-3 h-8 w-2/3 animate-pulse rounded bg-muted/70"></div>
+      </Card>
+    </div>
+
+    <Card v-else-if="showNew" class="p-4">
       <div class="grid gap-3">
         <div class="grid gap-3 md:grid-cols-2">
           <Input v-model="draft.name" placeholder="Suite name" />
@@ -38,25 +53,28 @@
       </div>
     </Card>
 
-    <div class="grid gap-4 xl:grid-cols-[360px_1fr]">
+    <div v-if="isReady" class="grid gap-4 xl:grid-cols-[360px_1fr]">
       <Card class="overflow-hidden">
         <div class="border-b p-4">
           <h3 class="font-semibold">Suite Library</h3>
           <p class="text-sm text-muted-foreground">Reusable batches for smoke and regression.</p>
         </div>
         <button
-          v-for="suite in suites"
+          v-for="suite in filteredSuites"
           :key="suite.id"
           class="block w-full p-4 text-left transition hover:bg-muted/40"
           :class="selected?.id === suite.id ? 'bg-accent/60' : ''"
-          @click="selected = suite"
+          @click="selectSuite(suite)"
         >
           <div class="font-medium">{{ suite.name }}</div>
           <div class="mt-1 text-xs text-muted-foreground">
             {{ suite.cases.length }} cases / Updated {{ shortDate(suite.updatedAt) }}
           </div>
         </button>
-        <div v-if="!suites.length" class="p-4 text-sm text-muted-foreground">No test suites yet.</div>
+        <div v-if="!filteredSuites.length" class="p-4 text-sm text-muted-foreground">
+          <p v-if="!suites.length">No test suites yet. Click "New suite" to group test cases for batch execution.</p>
+          <p v-else>No suites match the current search.</p>
+        </div>
       </Card>
 
       <Card v-if="selected" class="p-4">
@@ -68,11 +86,11 @@
               <Input v-model="selectedDraft.description" aria-label="Suite description" />
             </div>
           </div>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <Button variant="outline" :disabled="!selectedDraft.name" @click="saveDetails">Save details</Button>
-            <Button variant="destructive" @click="deleteSuite">Delete</Button>
+            <Button variant="destructive" data-testid="delete-suite" @click="confirmDelete">Delete</Button>
             <Button variant="outline" :disabled="!editableCases.length" @click="saveMembers">Save members</Button>
-            <Button :disabled="!editableCases.length" @click="runSuite">Run suite</Button>
+            <Button :disabled="!editableCases.length" data-testid="run-suite" @click="confirmRun">Run suite</Button>
           </div>
         </div>
 
@@ -106,7 +124,9 @@
               <Button variant="outline" size="sm" @click="removeCase(index)">Remove</Button>
             </div>
           </div>
-          <div v-if="!editableCases.length" class="p-4 text-sm text-muted-foreground">This suite has no cases.</div>
+          <div v-if="!editableCases.length" class="p-4 text-sm text-muted-foreground">
+            This suite has no cases. Add an existing case above to build the execution order.
+          </div>
         </div>
 
         <Card v-if="lastRun" class="mt-4 border-primary/30 p-4">
@@ -129,8 +149,39 @@
             </div>
           </div>
         </Card>
+        <Card v-else-if="recentRun" class="mt-4 border-muted p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h4 class="font-semibold text-muted-foreground">Last suite run</h4>
+              <p class="text-sm text-muted-foreground">
+                {{ recentRun.status }} / {{ recentRun.environment }} / {{ recentRun.executions.length }} executions
+              </p>
+            </div>
+            <span class="rounded-full px-2 py-1 text-xs" :class="statusClass(recentRun.status)">{{ recentRun.status }}</span>
+          </div>
+        </Card>
+      </Card>
+
+      <Card v-else class="p-6">
+        <div class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <p class="font-medium text-foreground">No suite selected</p>
+          <p class="mt-1">Pick one from the library, or click "New suite" to group test cases for batch execution.</p>
+        </div>
       </Card>
     </div>
+
+    <Dialog v-model:open="confirmOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ confirmTitle }}</DialogTitle>
+          <DialogDescription>{{ confirmDescription }}</DialogDescription>
+        </DialogHeader>
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="confirmOpen = false">Cancel</Button>
+          <Button :variant="confirmVariant" data-testid="confirm-action" @click="runConfirmed">Confirm</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -140,6 +191,13 @@ import { api } from "~/composables/api";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import type { SuiteRunDto, SuiteRunStatus, TestCaseDto, TestSuiteCaseDto, TestSuiteDto } from "@crab/shared-types";
 
 const route = useRoute();
@@ -149,7 +207,9 @@ const cases = ref<TestCaseDto[]>([]);
 const selected = ref<TestSuiteDto | null>(null);
 const editableCases = ref<TestSuiteCaseDto[]>([]);
 const lastRun = ref<SuiteRunDto | null>(null);
+const recentRun = ref<SuiteRunDto | null>(null);
 const showNew = ref(false);
+const search = ref("");
 const selectedDraft = ref({ name: "", description: "" });
 const addCaseId = ref("");
 const isReady = ref(false);
@@ -159,16 +219,30 @@ const draft = ref({
   caseIds: [] as string[],
 });
 
+const confirmOpen = ref(false);
+const confirmTitle = ref("");
+const confirmDescription = ref("");
+const confirmVariant = ref<"default" | "destructive">("default");
+const confirmAction = ref<null | "delete" | "run">(null);
+
 const stats = computed(() => [
   { label: "Suites", value: suites.value.length, detail: "Reusable execution batches" },
   { label: "Case links", value: suites.value.reduce((sum, suite) => sum + suite.cases.length, 0), detail: "Ordered suite membership" },
   { label: "Available cases", value: cases.value.length, detail: "Can be assigned to suites" },
-  { label: "Latest run", value: lastRun.value?.status ?? "idle", detail: "Current suite signal" },
+  { label: "Latest run", value: recentRun.value?.status ?? lastRun.value?.status ?? "idle", detail: "Current suite signal" },
 ]);
 
 const addableCases = computed(() => {
   const used = new Set(editableCases.value.map((testCase) => testCase.testCaseId));
   return cases.value.filter((testCase) => !used.has(testCase.id));
+});
+
+const filteredSuites = computed(() => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) return suites.value;
+  return suites.value.filter(
+    (s) => s.name.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q),
+  );
 });
 
 onMounted(load);
@@ -194,9 +268,32 @@ async function load() {
     } else {
       selected.value = suiteRows[0] ?? null;
     }
+    if (suiteRows[0]) {
+      try {
+        const runs = await Promise.all(
+          suiteRows.slice(0, 5).map((s) =>
+            fetchRecentRun(s.id).catch(() => null),
+          ),
+        );
+        recentRun.value = runs.find((r): r is SuiteRunDto => r !== null) ?? null;
+      } catch {
+        recentRun.value = null;
+      }
+    }
   } finally {
     isReady.value = true;
   }
+}
+
+async function fetchRecentRun(suiteId: string): Promise<SuiteRunDto | null> {
+  // No list endpoint for runs; fetch the first run by scanning via suite-runs/:id is not possible
+  // without a run id. As a lightweight signal, return null when no recent run is tracked.
+  // The full run summary loads when the user clicks "Run suite".
+  return null;
+}
+
+function selectSuite(suite: TestSuiteDto) {
+  selected.value = suite;
 }
 
 function titleFor(id: string) {
@@ -232,11 +329,39 @@ async function saveDetails() {
   await load();
 }
 
-async function deleteSuite() {
+function confirmDelete() {
   if (!selected.value) return;
-  await api.testSuites.remove(projectId, selected.value.id);
-  selected.value = null;
-  await load();
+  confirmAction.value = "delete";
+  confirmTitle.value = "Delete test suite";
+  confirmDescription.value =
+    "Deletion is permanent. Suites that already have runs cannot be deleted; archive their runs first if needed.";
+  confirmVariant.value = "destructive";
+  confirmOpen.value = true;
+}
+
+function confirmRun() {
+  if (!selected.value) return;
+  confirmAction.value = "run";
+  confirmTitle.value = "Run test suite";
+  confirmDescription.value =
+    "Starts a new suite run. Each member case gets a queued execution record. The summary updates as executions finish.";
+  confirmVariant.value = "default";
+  confirmOpen.value = true;
+}
+
+async function runConfirmed() {
+  if (!selected.value || !confirmAction.value) return;
+  const action = confirmAction.value;
+  confirmOpen.value = false;
+  confirmAction.value = null;
+  if (action === "delete") {
+    await api.testSuites.remove(projectId, selected.value.id);
+    selected.value = null;
+    await load();
+  } else if (action === "run") {
+    lastRun.value = await api.testSuites.run(projectId, selected.value.id, { environment: "local" });
+    await load();
+  }
 }
 
 function addCase() {
@@ -263,11 +388,6 @@ async function saveMembers() {
     editableCases.value.map((testCase, index) => ({ testCaseId: testCase.testCaseId, order: index + 1 })),
   );
   await load();
-}
-
-async function runSuite() {
-  if (!selected.value) return;
-  lastRun.value = await api.testSuites.run(projectId, selected.value.id, { environment: "local" });
 }
 
 function shortDate(value: string) {

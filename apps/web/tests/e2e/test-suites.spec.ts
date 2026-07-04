@@ -84,12 +84,13 @@ test("test suites: create, edit members, delete, run summary", async ({ page }) 
       response.request().method() === "DELETE" &&
       response.url().includes(`/projects/${project.id}/test-suites/${suite!.id}`),
   );
-  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await page.getByTestId("delete-suite").click();
+  await page.getByTestId("confirm-action").click();
   expect((await deleteResponse).ok()).toBe(true);
   await expect
     .poll(async () => (await api<TestSuiteDto[]>(`/projects/${project.id}/test-suites`, { token })).length)
     .toBe(0);
-  await expect(page.getByText("No test suites yet.")).toBeVisible();
+  await expect(page.getByText(/No test suites yet/)).toBeVisible();
 
   const runSuite = await api<TestSuiteDto>(`/projects/${project.id}/test-suites`, {
     method: "POST",
@@ -107,7 +108,8 @@ test("test suites: create, edit members, delete, run summary", async ({ page }) 
   expect(run.executionIds).toHaveLength(3);
 
   await page.reload();
-  await page.getByRole("button", { name: "Run suite", exact: true }).click();
+  await page.getByTestId("run-suite").click();
+  await page.getByTestId("confirm-action").click();
   await expect(page.getByText(/3 executions/)).toBeVisible();
   await expect(page.locator(`a[href^="/projects/${project.id}/executions/"]`).first()).toBeVisible();
 });
