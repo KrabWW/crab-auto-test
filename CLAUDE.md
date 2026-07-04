@@ -39,19 +39,30 @@ WHartTest（`D:\code\auto-test\WHartTest`）是产品意图源头，crab-auto-te
 
 ## R-INTENT-03：迁移模块队列（按 WHartTest 意图优先级）
 
-模块队列与当前进度：
+模块队列与当前进度（updated 2026-07-05 after deep-parity recheck）：
 
-| # | 模块 | 状态 | 备注 |
+| # | 模块 | 状态 | 关键能力 |
 |---|---|---|---|
-| 0 | project workspace polish | ✅ 已 commit `cb558b2` | 需求优先入口 |
-| 1 | requirement-management | 🔄 返工中 | 全量补齐：文档上传 + AI 拆分 + AI 评审（3 commits） |
-| 2 | test-suite | ✅ 已 commit `f2653cc` | UI 工作台 polish |
-| 3 | api-automation | ⏳ 待办 | 接口用例、请求配置、断言、变量提取、环境变量、执行记录、报告 |
-| 4 | llm-chat | ⏳ 待办 | 项目级 AI 对话、上下文选择、RAG 开关、工具调用展示 |
-| 5 | mcp-admin | ⏳ 待办 | 项目级 MCP 工具列表、allowlist、审批、测试调用、调用日志 |
-| 6 | skills-management polish | ⏳ 待办 | 技能安装、启停、权限、调用记录 |
-| 7 | knowledge polish | ⏳ 待办 | 知识库文档、chunk、检索诊断、来源归因 |
-| 8 | execution/report polish | ⏳ 待办 | 执行队列、详情、artifact/report 展示 |
+| 0 | project workspace | ✅ 完成 | 需求优先入口、demo workspace 置顶 |
+| 1 | requirement-management | ✅ 完成 | 文档上传(pdf/docx/txt/md/html) + AI 模块拆分 + AI 4维评审 + 状态机 + 审批 |
+| 2 | test-suite | ✅ 完成 | CRUD + 有序成员 + suite run + 汇总 + Dialog 确认 |
+| 3 | api-automation | ✅ 完成 | HTTP cases + 多步 scenario + tags + global headers + JSON path viewer + custom helpers |
+| 4 | llm-chat | ✅ 完成 | 会话 + RAG + token tracking + 自定义 system prompt + Anthropic compat |
+| 5 | mcp-admin | ✅ 完成 | 工具审批 + server registry + tool sync + timeout 加固 |
+| 6 | skills-management | ✅ 完成 | 安装/启停/权限/调用记录（crab 严格优于 WHartTest） |
+| 7 | knowledge | ✅ 完成 | KB/doc/chunk + RAG + 检索诊断 + query log + stub-vector 警告 |
+| 8 | execution/report | ✅ 完成 | 队列/详情/artifact/snapshot（crab 严格优于 WHartTest） |
+| 9 | test-case mindmap | ✅ 完成 | tree view + 优先级徽章 + JSON/SVG 导出 |
+| 10 | operation logs | ✅ 完成 | audit.vue + Table + 筛选 + 详情 Dialog |
+| 11 | ui automation assets | ✅ 完成 | page objects + locators + page steps CRUD + 前端工作台 |
+| 12 | api keys | ✅ 完成 | 项目级 SHA-256 hashed API key 管理 + 设置页 UI |
+
+**范围外（需 LLM 配置或大型独立功能）**：
+- AI edit/repair for API cases（需 OpenAI/Anthropic API key）
+- Chat title LLM summary（需 LLM）
+- SQL hooks + DB configs（独立 5+ commit 子项目）
+- Skills store/catalog browsing（独立 3+ commit 子项目）
+- i18n 全量翻译（独立 3+ commit 子项目）
 
 **单模块并行规则**：一次只允许一个"实现模块"处于写代码状态。其他 agent 可并行做后续模块的只读盘点和计划，但不得提前改代码。
 
