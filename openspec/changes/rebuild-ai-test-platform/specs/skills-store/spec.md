@@ -18,6 +18,16 @@ The system SHALL provide a Skills store where authorized users can browse, insta
 - **WHEN** an authorized user installs a compatible Skill
 - **THEN** the system MUST record the installed version, requested permissions, source, checksum, and installation actor.
 
+#### Scenario: Project user opens Skills management
+
+- **WHEN** a project user opens the Skills management page
+- **THEN** the system MUST show installed Skills for that project, including version, validation status, installation state, source, checksum, requested permissions, activated permissions, and recent invocation counts.
+
+#### Scenario: User re-enables a disabled Skill
+
+- **WHEN** a project user enables a disabled Skill installation
+- **THEN** the system MUST restore it to the installed state without changing its version, checksum, or approved permissions, and MUST record an audit event.
+
 ### Requirement: Skill permissions are reviewed before activation
 
 The system SHALL require explicit permission review before a Skill can be activated for AI workflows or local workers.
@@ -35,6 +45,16 @@ The system SHALL expose approved Skills to LangGraph workflows and MCP integrati
 
 - **WHEN** a LangGraph node invokes an installed Skill
 - **THEN** the system MUST enforce the Skill permission policy and record invocation metadata in the workflow trace.
+
+#### Scenario: Project user reviews Skill invocations
+
+- **WHEN** a project user inspects a Skill installation
+- **THEN** the system MUST show recent invocation records with adapter, status, permissions used, redacted arguments, redacted result metadata, run reference, worker reference, and invocation time, scoped to the current project.
+
+#### Scenario: Project user runs a controlled Skill test invocation
+
+- **WHEN** a project user runs a test invocation for an installed Skill
+- **THEN** the system MUST invoke the selected entry point through the controlled adapter, enforce approved permissions, record the invocation outcome, and refresh the project-scoped invocation list.
 
 ### Requirement: Skills can be updated and rolled back
 

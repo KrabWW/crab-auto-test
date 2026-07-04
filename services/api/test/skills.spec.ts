@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { describe, it, expect, vi } from "vitest";
 import { SkillsService, type SkillPackageManifest } from "../src/modules/skills/skills.service";
+import { SkillsController } from "../src/modules/skills/skills.controller";
 import { createHash } from "node:crypto";
 
 /**
@@ -28,6 +30,62 @@ function validManifest(overrides: Partial<SkillPackageManifest> = {}): SkillPack
   const m = { ...base, ...overrides };
   m.checksum = createHash("sha256").update(m.payload!).digest("hex");
   return m;
+}
+
+
+function makeService(prisma: Record<string, unknown>) {
+  return new SkillsService(prisma as never, { record: vi.fn() } as never);
+}
+
+function skillRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "skill-1",
+    name: "demo-skill",
+    version: "1.0.0",
+    description: "demonstration skill",
+    author: "crab",
+    compatibility: {},
+    permissions: { entryPoints: ["enrich-cases"] },
+    entryPoints: { "enrich-cases": { adapter: "langgraph" } },
+    checksum: "abc",
+    source: "local",
+    validationStatus: "valid",
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    ...overrides,
+  };
+}
+
+function installationRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "installation-1",
+    projectId: "project-a",
+    skillId: "skill-1",
+    state: "disabled",
+    activatedPermissions: { entryPoints: ["enrich-cases"] },
+    previousVersionId: null,
+    installedBy: "user-a",
+    installedChecksum: "abc",
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    skill: skillRow(),
+    _count: { invocations: 1 },
+    invocations: [
+      {
+        id: "invocation-1",
+        installationId: "installation-1",
+        runId: "run-1",
+        workerJobRef: null,
+        adapter: "langgraph",
+        permissionsUsed: { entryPoint: "enrich-cases" },
+        argsRedacted: { token: "[REDACTED]" },
+        resultMeta: { ok: true },
+        status: "success",
+        invokedAt: new Date("2026-01-01T00:01:00.000Z"),
+      },
+    ],
+    ...overrides,
+  };
 }
 
 describe("U-SKILL-VALID — Skills package validation", () => {
@@ -72,5 +130,97 @@ describe("I-SKILL-FAIL-KEEP — failed validation keeps current version", () => 
     expect(validate(bad)).toBe(false);
     // Structural guarantee (skills-store.5): a false validation result means
     // install() never reaches prisma.skillInstallation.create — no half-state.
+  });
+});
+
+describe("skills-management polish", () => {
+  it("lists project installations with permissions and recent invocation metadata", async () => {
+    const svc = makeService({
+      skillInstallation: { findMany: vi.fn().mockResolvedValue([installationRow()]) },
+    });
+
+    const rows = await svc.listInstallations("project-a");
+
+    expect(rows[0]).toMatchObject({
+      id: "installation-1",
+      projectId: "project-a",
+      state: "disabled",
+      invocationCount: 1,
+      skill: { name: "demo-skill", validationStatus: "valid" },
+      recentInvocations: [{ status: "success", adapter: "langgraph", runId: "run-1" }],
+    });
+  });
+
+  it("enables only installations in the current project", async () => {
+    const findFirst = vi
+      .fn()
+      .mockResolvedValueOnce({ id: "installation-1", projectId: "project-a" })
+      .mockResolvedValueOnce(installationRow({ state: "installed" }));
+    const update = vi.fn().mockResolvedValue({});
+    const svc = makeService({ skillInstallation: { findFirst, update } });
+
+    const row = await svc.enable("project-a", "installation-1", "user-a");
+
+    expect(update).toHaveBeenCalledWith({ where: { id: "installation-1" }, data: { state: "installed" } });
+    expect(findFirst).toHaveBeenNthCalledWith(1, { where: { id: "installation-1", projectId: "project-a" } });
+    expect(row.state).toBe("installed");
+  });
+
+  it("rejects invocation history reads for another project", async () => {
+    const svc = makeService({
+      skillInstallation: { findFirst: vi.fn().mockResolvedValue(null) },
+      skillInvocation: { findMany: vi.fn() },
+    });
+
+    await expect(svc.listInvocations("project-b", "installation-1")).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it("returns redacted invocation history for the selected installation", async () => {
+    const findMany = vi.fn().mockResolvedValue(installationRow().invocations);
+    const svc = makeService({
+      skillInstallation: { findFirst: vi.fn().mockResolvedValue({ id: "installation-1", projectId: "project-a" }) },
+      skillInvocation: { findMany },
+    });
+
+    const invocations = await svc.listInvocations("project-a", "installation-1");
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: { installationId: "installation-1" },
+      orderBy: { invokedAt: "desc" },
+      take: 50,
+    });
+    expect(invocations[0]).toMatchObject({
+      status: "success",
+      argsRedacted: { token: "[REDACTED]" },
+      resultMeta: { ok: true },
+    });
+  });
+
+  it("test-invokes through the controlled adapter and returns refreshed invocation records", async () => {
+    const skills = {
+      getInstallation: vi.fn().mockResolvedValue(installationRow({ state: "installed" })),
+      listInvocations: vi.fn().mockResolvedValue(installationRow().invocations),
+    };
+    const adapter = {
+      invoke: vi.fn().mockRejectedValue(new BadRequestException("no first-party handler registered")),
+    };
+    const controller = new SkillsController(skills as never, adapter as never);
+
+    const result = await controller.testInvoke(
+      "project-a",
+      "installation-1",
+      { userId: "user-a", email: "u@example.test" },
+      { args: { token: "secret" } },
+    );
+
+    expect(adapter.invoke).toHaveBeenCalledWith({
+      installationId: "installation-1",
+      adapter: "langgraph",
+      entryPoint: "enrich-cases",
+      args: { token: "secret" },
+      actorId: "user-a",
+    });
+    expect(skills.listInvocations).toHaveBeenCalledWith("project-a", "installation-1");
+    expect(result[0]).toMatchObject({ status: "success", adapter: "langgraph" });
   });
 });

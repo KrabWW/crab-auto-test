@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   Globe,
   ListTree,
+  PackageCheck,
   PlayCircle,
   Settings,
   Sparkles,
@@ -48,6 +49,7 @@ const entries = computed<NavEntry[]>(() => {
     { label: "Executions", slug: "executions", to: `${base}/executions`, icon: PlayCircle },
     { label: "Knowledge", slug: "knowledge", to: `${base}/knowledge`, icon: BookOpen },
     { label: "MCP Admin", slug: "mcp-admin", to: `${base}/mcp-admin`, icon: Wrench },
+    { label: "Skills", slug: "skills", to: `${base}/skills`, icon: PackageCheck },
     { label: "API Automation", slug: "api-automation", to: `${base}/api-automation`, icon: Globe },
     { label: "Settings", slug: "settings", to: `${base}/settings`, icon: Settings },
   ];

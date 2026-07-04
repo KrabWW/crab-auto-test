@@ -44,6 +44,11 @@ import type {
   TestMcpToolRequest,
   McpToolHistoryDto,
   McpToolCallResultDto,
+  SkillInstallationDto,
+  SkillInvocationDto,
+  SkillPackageManifestDto,
+  ApproveSkillPermissionsRequest,
+  InvokeSkillTestRequest,
 } from "@crab/shared-types";
 
 const API_BASE =
@@ -212,6 +217,34 @@ export const api = {
       }),
     history: (projectId: string, toolId: string) =>
       request<McpToolHistoryDto>(`/projects/${projectId}/mcp/tools/${toolId}/history`),
+  },
+  skills: {
+    list: (projectId: string) => request<SkillInstallationDto[]>(`/projects/${projectId}/skills`),
+    install: (projectId: string, req: SkillPackageManifestDto) =>
+      request<SkillInstallationDto>(`/projects/${projectId}/skills/install`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    approvePermissions: (projectId: string, installationId: string, req: ApproveSkillPermissionsRequest) =>
+      request<SkillInstallationDto>(`/projects/${projectId}/skills/${installationId}/permissions/approve`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
+    enable: (projectId: string, installationId: string) =>
+      request<SkillInstallationDto>(`/projects/${projectId}/skills/${installationId}/enable`, { method: "POST" }),
+    disable: (projectId: string, installationId: string) =>
+      request<SkillInstallationDto>(`/projects/${projectId}/skills/${installationId}/disable`, { method: "POST" }),
+    uninstall: (projectId: string, installationId: string) =>
+      request<SkillInstallationDto>(`/projects/${projectId}/skills/${installationId}/uninstall`, { method: "POST" }),
+    rollback: (projectId: string, installationId: string) =>
+      request<SkillInstallationDto>(`/projects/${projectId}/skills/${installationId}/rollback`, { method: "POST" }),
+    invocations: (projectId: string, installationId: string) =>
+      request<SkillInvocationDto[]>(`/projects/${projectId}/skills/${installationId}/invocations`),
+    testInvoke: (projectId: string, installationId: string, req: InvokeSkillTestRequest = {}) =>
+      request<SkillInvocationDto[]>(`/projects/${projectId}/skills/${installationId}/test-invoke`, {
+        method: "POST",
+        body: JSON.stringify(req),
+      }),
   },
   ai: {
     start: (projectId: string, req: Omit<StartTestGenerationRequest, "projectId">) =>

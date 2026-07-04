@@ -2,7 +2,6 @@ import {
   Injectable,
   BadRequestException,
   ForbiddenException,
-  Logger,
 } from "@nestjs/common";
 import { PrismaService } from "../../infra/prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
@@ -31,7 +30,6 @@ type SkillHandler = (args: Record<string, unknown>) => Promise<Record<string, un
 
 @Injectable()
 export class SkillAdapterService {
-  private readonly logger = new Logger(SkillAdapterService.name);
   private readonly handlers = new Map<string, SkillHandler>();
 
   constructor(
@@ -63,7 +61,7 @@ export class SkillAdapterService {
     });
     if (!inst) throw new BadRequestException("Installation not found");
     if (inst.state !== "installed") {
-      await this.recordInvocation(inst.id, input, "denied", { reason: "not installed/active" });
+      await this.recordInvocation(inst.id, inst.projectId, input, "denied", { reason: "not installed/active" });
       throw new ForbiddenException("skill not active");
     }
 
@@ -71,29 +69,30 @@ export class SkillAdapterService {
     const activated = (inst.activatedPermissions as Record<string, unknown> | null) ?? {};
     const allowedEntryPoints = (activated.entryPoints as string[] | undefined) ?? [];
     if (allowedEntryPoints.length > 0 && !allowedEntryPoints.includes(input.entryPoint)) {
-      await this.recordInvocation(inst.id, input, "denied", { reason: "entryPoint not approved" });
+      await this.recordInvocation(inst.id, inst.projectId, input, "denied", { reason: "entryPoint not approved" });
       throw new ForbiddenException("entryPoint not in approved permission set");
     }
 
     const handler = this.handlers.get(input.entryPoint);
     if (!handler) {
-      await this.recordInvocation(inst.id, input, "denied", { reason: "no first-party handler registered" });
+      await this.recordInvocation(inst.id, inst.projectId, input, "denied", { reason: "no first-party handler registered" });
       throw new BadRequestException(`no handler for entryPoint ${input.entryPoint}`);
     }
 
     try {
       const result = await handler(input.args);
-      await this.recordInvocation(inst.id, input, "success", result);
+      await this.recordInvocation(inst.id, inst.projectId, input, "success", result);
       return { status: "success", resultMeta: result };
     } catch (err) {
       const meta = { error: (err as Error).message };
-      await this.recordInvocation(inst.id, input, "failure", meta);
+      await this.recordInvocation(inst.id, inst.projectId, input, "failure", meta);
       return { status: "failure", resultMeta: meta };
     }
   }
 
   private async recordInvocation(
     installationId: string,
+    projectId: string | null | undefined,
     input: { adapter: SkillAdapterKind; entryPoint: string; args: Record<string, unknown>; runId?: string; workerJobRef?: string; actorId: string },
     status: "success" | "failure" | "denied",
     resultMeta: Record<string, unknown>,
@@ -112,6 +111,7 @@ export class SkillAdapterService {
     });
     await this.audit.record({
       actorId: input.actorId,
+      projectId: projectId ?? undefined,
       action: `skill.invoke.${status}`,
       targetType: "skill-installation",
       targetId: installationId,
