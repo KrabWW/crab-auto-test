@@ -216,6 +216,15 @@
                 <div class="font-medium">Extracted variables</div>
                 <pre class="mt-2 overflow-auto text-xs">{{ JSON.stringify(latestExecution.extractedVariables, null, 2) }}</pre>
               </div>
+
+              <details class="mt-4 rounded-md border p-3 text-sm" data-testid="api-response-viewer">
+                <summary class="cursor-pointer font-medium">Response snapshot (JSON path viewer)</summary>
+                <div class="mt-3 grid gap-2 text-xs">
+                  <div v-if="responseStatusLine" class="text-muted-foreground">{{ responseStatusLine }}</div>
+                  <div v-if="!parsedResponseBody">Response body is not JSON-parseable.</div>
+                  <JsonPathTree v-else :data="parsedResponseBody" />
+                </div>
+              </details>
             </div>
 
             <div v-else class="mt-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
@@ -230,6 +239,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import JsonPathTree from "~/components/JsonPathTree.vue";
 import { api } from "~/composables/api";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -265,6 +275,30 @@ const selectedCaseId = ref("");
 const latestExecution = ref<ApiExecutionDto | null>(null);
 const loading = ref(false);
 const running = ref(false);
+
+const responseStatusLine = computed(() => {
+  const snap = latestExecution.value?.responseSnapshot as { status?: number; headers?: Record<string, string> } | undefined;
+  if (!snap) return "";
+  const parts: string[] = [];
+  if (typeof snap.status === "number") parts.push(`HTTP ${snap.status}`);
+  if (snap.headers) {
+    const ct = snap.headers["content-type"] ?? snap.headers["Content-Type"];
+    if (ct) parts.push(ct);
+  }
+  return parts.join(" · ");
+});
+
+const parsedResponseBody = computed<unknown>(() => {
+  const snap = latestExecution.value?.responseSnapshot as { body?: unknown; error?: string } | undefined;
+  if (!snap) return null;
+  if (typeof snap.error === "string") return { error: snap.error };
+  if (typeof snap.body !== "string") return null;
+  try {
+    return JSON.parse(snap.body);
+  } catch {
+    return null;
+  }
+});
 
 const envDraft = ref({
   name: "Local API",
