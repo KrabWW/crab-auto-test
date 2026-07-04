@@ -874,9 +874,68 @@ function truncate(value: string, limit: number): string {
 }
 
 function applyTemplate(value: string, variables: Record<string, string>): string {
-  return value.replace(/\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}/g, (match, key: string) =>
+  // First resolve helper function calls like {{fn.now()}} or {{fn.uuid()}}.
+  const withFunctions = value.replace(
+    /\{\{\s*fn\.([a-zA-Z]+)\(([^)]*)\)\s*\}\}/g,
+    (match, fnName: string, argsRaw: string) => {
+      const args = argsRaw.split(",").map((a) => a.trim().replace(/^"|"$/g, ""));
+      const result = invokeHelper(fnName, args);
+      return result === undefined ? match : result;
+    },
+  );
+  // Then resolve plain variable references.
+  return withFunctions.replace(/\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}/g, (match, key: string) =>
     Object.prototype.hasOwnProperty.call(variables, key) ? variables[key]! : match,
   );
+}
+
+/** Built-in helper functions invoked via {{fn.name(args)}} in URL/headers/body. */
+function invokeHelper(name: string, args: string[]): string | undefined {
+  switch (name) {
+    case "now":
+      return new Date().toISOString();
+    case "timestamp":
+      return String(Date.now());
+    case "uuid":
+      return cryptoRandomUuid();
+    case "randomString": {
+      const len = Number(args[0]) || 8;
+      return randomAlpha(len);
+    }
+    case "randomInt": {
+      const min = Number(args[0]) || 0;
+      const max = Number(args[1]) || 100;
+      return String(Math.floor(Math.random() * (max - min + 1)) + min);
+    }
+    case "randomEmail":
+      return `qa+${randomAlpha(8)}@example.com`;
+    default:
+      return undefined;
+  }
+}
+
+function cryptoRandomUuid(): string {
+  try {
+    if (typeof globalThis.crypto?.randomUUID === "function") {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch {
+    /* fall through */
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16);
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+function randomAlpha(len: number): string {
+  const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let out = "";
+  for (let i = 0; i < len; i++) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
 }
 
 function normalizeUrlTemplate(value: string): string {
