@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { EnvelopeEncryptionService } from "../../infra/crypto/envelope-encryption.service";
 import { PrismaService } from "../../infra/prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
+import { ApiGlobalHeadersService } from "./api-global-headers.service";
 import type {
   ApiAssertionDto,
   ApiAssertionOperator,
@@ -46,6 +47,7 @@ interface ApiCaseRow {
   url: string;
   headers: unknown;
   body: string | null;
+  tags: string[];
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -101,6 +103,7 @@ export class ApiAutomationService {
     private readonly prisma: PrismaService,
     private readonly crypto: EnvelopeEncryptionService,
     private readonly audit: AuditService,
+    private readonly globalHeaders: ApiGlobalHeadersService,
   ) {}
 
   async listEnvironments(projectId: string): Promise<ApiEnvironmentDto[]> {
@@ -217,6 +220,7 @@ export class ApiAutomationService {
         url: req.url,
         headers: headers as never,
         body: req.body,
+        tags: this.normalizeTags(req.tags),
         createdBy: actorId,
         assertions: {
           create: assertions.map((a) => ({
@@ -282,6 +286,7 @@ export class ApiAutomationService {
           ...(req.url !== undefined ? { url: req.url } : {}),
           ...(headers !== undefined ? { headers: headers as never } : {}),
           ...(req.body !== undefined ? { body: req.body } : {}),
+          ...(req.tags !== undefined ? { tags: this.normalizeTags(req.tags) } : {}),
           ...(assertions !== undefined
             ? {
                 assertions: {
@@ -349,7 +354,8 @@ export class ApiAutomationService {
 
     const secrets: string[] = [];
     const variables = await this.resolveVariables(projectId, environment, secrets);
-    const request = await this.buildRequest(projectId, testCase, variables, secrets);
+    const globalHeaders = await this.globalHeaders.resolveForRun(projectId);
+    const request = await this.buildRequest(projectId, testCase, variables, secrets, globalHeaders);
     const startedAt = new Date();
     const started = Date.now();
 
@@ -597,8 +603,10 @@ export class ApiAutomationService {
     testCase: ApiCaseRow,
     variables: Record<string, string>,
     secrets: string[],
+    globalHeaders?: Record<string, string>,
   ): Promise<{ url: string; init: RequestInit }> {
-    const headers: HeaderBag = {};
+    // Project-level global headers provide defaults; explicit case headers override.
+    const headers: HeaderBag = { ...(globalHeaders ?? {}) };
     for (const item of parseNamedValues(testCase.headers)) {
       headers[item.key] = applyTemplate(
         await this.resolveNamedValue(projectId, item, secrets),
@@ -669,12 +677,28 @@ export class ApiAutomationService {
     url: row.url,
     headers: parseNamedValues(row.headers),
     body: row.body ?? undefined,
+    tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
     assertions: row.assertions.map((assertion) => this.toAssertionDto(assertion)),
     extractions: row.extractions.map((extraction) => this.toExtractionDto(extraction)),
     createdBy: row.createdBy,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   });
+
+  private normalizeTags(tags: string[] | undefined): string[] {
+    if (!Array.isArray(tags)) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const raw of tags) {
+      const trimmed = String(raw).trim();
+      if (!trimmed || trimmed.length > 40) continue;
+      const lowered = trimmed.toLowerCase();
+      if (seen.has(lowered)) continue;
+      seen.add(lowered);
+      out.push(trimmed);
+    }
+    return out;
+  }
 
   private toAssertionDto(assertion: {
     id: string;

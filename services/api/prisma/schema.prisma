@@ -33,6 +33,7 @@ model User {
   createdApiEnvironments ApiEnvironment[]
   createdApiCases ApiTestCase[]
   createdApiExecutions ApiExecution[]
+  createdApiGlobalHeaders ApiGlobalHeader[]
   createdApiScenarios ApiScenario[]
   createdApiScenarioRuns ApiScenarioRun[]
   createdRequirements Requirement[]
@@ -64,6 +65,7 @@ model Project {
   apiEnvironments ApiEnvironment[]
   apiCases       ApiTestCase[]
   apiExecutions  ApiExecution[]
+  apiGlobalHeaders ApiGlobalHeader[]
   apiScenarios   ApiScenario[]
   apiScenarioRuns ApiScenarioRun[]
   requirements   Requirement[]
@@ -546,6 +548,26 @@ model ApiEnvironment {
   @@index([projectId, createdAt])
 }
 
+// Phase 3: API automation depth — project-level headers applied to every
+// request unless the case overrides them. Secret-flagged values flow through
+// the same envelope-encryption path as environment secrets.
+model ApiGlobalHeader {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  value     String
+  secret    Boolean  @default(false)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation(fields: [createdBy], references: [id])
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
 model ApiTestCase {
   id        String   @id @default(cuid())
   projectId String
@@ -554,6 +576,7 @@ model ApiTestCase {
   url       String
   headers   Json
   body      String?
+  tags      String[] @default([])
   createdBy String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

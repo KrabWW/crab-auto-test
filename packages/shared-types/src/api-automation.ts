@@ -61,6 +61,7 @@ export interface ApiTestCaseDto {
   url: string;
   headers: ApiNamedValueDto[];
   body?: string;
+  tags: string[];
   assertions: ApiAssertionDto[];
   extractions: ApiVariableExtractionDto[];
   createdBy: string;
@@ -74,11 +75,33 @@ export interface CreateApiTestCaseRequest {
   url: string;
   headers?: CreateApiNamedValueRequest[];
   body?: string;
+  tags?: string[];
   assertions?: ApiAssertionDto[];
   extractions?: ApiVariableExtractionDto[];
 }
 
 export type UpdateApiTestCaseRequest = Partial<CreateApiTestCaseRequest>;
+
+// ─── Global headers (project-scoped, applied to every request unless overridden)
+
+export interface ApiGlobalHeaderDto {
+  id: string;
+  projectId: string;
+  name: string;
+  value: string;
+  secret: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateApiGlobalHeaderRequest {
+  name: string;
+  value: string;
+  secret?: boolean;
+}
+
+export type UpdateApiGlobalHeaderRequest = Partial<CreateApiGlobalHeaderRequest>;
 
 export interface ApiAssertionResultDto extends ApiAssertionDto {
   actual?: string;

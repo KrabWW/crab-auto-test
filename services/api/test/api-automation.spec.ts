@@ -17,6 +17,7 @@ function makeService(prisma: Record<string, unknown>) {
       decrypt: vi.fn(() => "s3cr3t"),
     } as never,
     { record: vi.fn() } as never,
+    { resolveForRun: vi.fn().mockResolvedValue({}) } as never,
   );
 }
 
