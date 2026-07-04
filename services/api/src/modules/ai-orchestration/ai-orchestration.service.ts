@@ -130,6 +130,7 @@ export class AiOrchestrationService {
       stage: "context-retrieval",
       ok: true,
       ragChunks: ragSources.length,
+      sourceAttribution: ragSources,
     });
 
     // Stage: drafting — real LLM call via LangChain.js (B1). Server-side only (a7).
@@ -415,6 +416,7 @@ export class AiOrchestrationService {
         sequence: seq,
         status: (payload as { ok?: boolean }).ok === false ? "fail" : "success",
         retryCount: (payload as { retryCount?: number }).retryCount ?? 0,
+        sourceAttribution: (payload as { sourceAttribution?: unknown }).sourceAttribution as object | undefined,
       },
     });
   }

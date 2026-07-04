@@ -12,6 +12,7 @@ import { KnowledgeService } from "./knowledge.service";
 import { SessionAuthGuard } from "../auth/session-auth.guard";
 import { MembershipGuard } from "../projects/membership.guard";
 import { CurrentUser, type RequestUser } from "../../common/auth.decorators";
+import type { CreateKnowledgeBaseRequest, IngestKnowledgeDocumentRequest } from "@crab/shared-types";
 
 @Controller("projects/:projectId")
 @UseGuards(SessionAuthGuard, MembershipGuard)
@@ -27,15 +28,15 @@ export class KnowledgeController {
   createKb(
     @Param("projectId") projectId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { name: string; description?: string },
+    @Body() body: CreateKnowledgeBaseRequest,
   ) {
     if (!body?.name) throw new BadRequestException("name required");
     return this.knowledge.createKb(projectId, user.userId, body.name, body.description);
   }
 
   @Get("knowledge-bases/:kbId/documents")
-  listDocs(@Param("kbId") kbId: string) {
-    return this.knowledge.listDocuments(kbId);
+  listDocs(@Param("projectId") projectId: string, @Param("kbId") kbId: string) {
+    return this.knowledge.listDocuments(projectId, kbId);
   }
 
   @Post("knowledge-bases/:kbId/documents")
@@ -43,10 +44,19 @@ export class KnowledgeController {
     @Param("projectId") projectId: string,
     @Param("kbId") kbId: string,
     @CurrentUser() user: RequestUser,
-    @Body() body: { filename: string; mimeType: string; content: string },
+    @Body() body: IngestKnowledgeDocumentRequest,
   ) {
     if (!body?.filename || !body?.content) throw new BadRequestException("filename + content required");
     return this.knowledge.ingestDocument(kbId, projectId, user.userId, body);
+  }
+
+  @Get("knowledge-bases/:kbId/documents/:documentId/chunks")
+  chunks(
+    @Param("projectId") projectId: string,
+    @Param("kbId") kbId: string,
+    @Param("documentId") documentId: string,
+  ) {
+    return this.knowledge.listDocumentChunks(projectId, kbId, documentId);
   }
 
   /** knowledge-rag.5 diagnostics endpoint. */

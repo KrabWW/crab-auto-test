@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { StubRetrievalBackend } from "../src/infra/retrieval/stub-retrieval-backend";
+import { RetrievalBackendService } from "../src/infra/retrieval/retrieval-backend.service";
 import type { RetrievalBackend } from "../src/infra/retrieval/retrieval-backend.interface";
 
 /**
@@ -10,7 +11,7 @@ import type { RetrievalBackend } from "../src/infra/retrieval/retrieval-backend.
  * The pgvector adapter is bound in production; this test exercises the contract
  * that the pgvector adapter also satisfies, without needing a live Postgres+pgvector.
  */
-describe("U-RETRIEVAL-IF — RetrievalBackend interface conformance", () => {
+describe("U-RETRIEVAL-IF - RetrievalBackend interface conformance", () => {
   function exercise(backend: RetrievalBackend, label: string) {
     describe(`${label}`, () => {
       it("exposes a backendName", () => {
@@ -42,10 +43,58 @@ describe("U-RETRIEVAL-IF — RetrievalBackend interface conformance", () => {
   stub.seed("chunk-2", "unrelated content", "proj-1");
   exercise(stub, "StubRetrievalBackend");
 
-  it("interface is structural — both adapters share the same shape", () => {
+  it("interface is structural - both adapters share the same shape", () => {
     const checks: Array<keyof RetrievalBackend> = ["backendName", "embed", "store", "query", "diagnose"];
     for (const k of checks) {
       expect(typeof (stub as unknown as RetrievalBackend)[k]).not.toBe("undefined");
     }
+  });
+
+  it("pgvector adapter lazily creates raw vector infrastructure idempotently before vector use", async () => {
+    const prisma = {
+      $executeRawUnsafe: vi.fn().mockResolvedValue(0),
+      $executeRaw: vi.fn().mockResolvedValue(0),
+    };
+    const providers = { list: vi.fn() };
+    const adapter = new RetrievalBackendService(prisma as never, providers as never);
+
+    expect(prisma.$executeRawUnsafe).not.toHaveBeenCalled();
+
+    await adapter.store("chunk-1", [0, 1, 0], "stub");
+    await adapter.store("chunk-1", [0, 1, 0], "stub");
+
+    expect(prisma.$executeRawUnsafe).toHaveBeenCalledTimes(3);
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
+    const sql = prisma.$executeRawUnsafe.mock.calls.map(([statement]) => statement).join("\n");
+    expect(sql).toContain('CREATE EXTENSION IF NOT EXISTS "vector"');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS "embedding_vector"');
+    expect(sql).toContain("embedding_vector_embedding_hnsw_idx");
+  });
+
+  it("pgvector adapter keeps embeddings at the fixed table dimension", async () => {
+    const prisma = {
+      $executeRawUnsafe: vi.fn().mockResolvedValue(0),
+      $executeRaw: vi.fn().mockResolvedValue(0),
+    };
+    const providers = {
+      list: vi.fn().mockResolvedValue([{ id: "emb-1", kind: "embeddings", status: "valid" }]),
+      resolveForOrchestration: vi.fn().mockResolvedValue({
+        baseUrl: "http://embeddings.local/v1",
+        modelName: "custom-3d",
+        credential: "redacted",
+      }),
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ data: [{ embedding: [0.1, 0.2, 0.3] }] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const adapter = new RetrievalBackendService(prisma as never, providers as never);
+    const embedding = await adapter.embed("dimension mismatch should fall back");
+
+    expect(embedding).toHaveLength(1536);
+    expect(fetchMock).toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

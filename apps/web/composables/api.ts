@@ -49,6 +49,12 @@ import type {
   SkillPackageManifestDto,
   ApproveSkillPermissionsRequest,
   InvokeSkillTestRequest,
+  KnowledgeBaseDto,
+  KnowledgeChunkDto,
+  KnowledgeDocumentDto,
+  KnowledgeRetrievalDiagnosticDto,
+  CreateKnowledgeBaseRequest,
+  IngestKnowledgeDocumentRequest,
 } from "@crab/shared-types";
 
 const API_BASE =
@@ -264,14 +270,16 @@ export const api = {
     validate: (id: string) => request(`/model-providers/${id}/validate`, { method: "POST" }),
   },
   knowledge: {
-    listKbs: (projectId: string) => request<{ id: string; name: string; description?: string }[]>(`/projects/${projectId}/knowledge-bases`),
-    createKb: (projectId: string, name: string, description?: string) =>
-      request(`/projects/${projectId}/knowledge-bases`, { method: "POST", body: JSON.stringify({ name, description }) }),
+    listKbs: (projectId: string) => request<KnowledgeBaseDto[]>(`/projects/${projectId}/knowledge-bases`),
+    createKb: (projectId: string, req: CreateKnowledgeBaseRequest) =>
+      request<KnowledgeBaseDto>(`/projects/${projectId}/knowledge-bases`, { method: "POST", body: JSON.stringify(req) }),
     listDocs: (projectId: string, kbId: string) =>
-      request<{ id: string; filename: string; status: string }[]>(`/projects/${projectId}/knowledge-bases/${kbId}/documents`),
-    ingest: (projectId: string, kbId: string, input: { filename: string; mimeType: string; content: string }) =>
-      request(`/projects/${projectId}/knowledge-bases/${kbId}/documents`, { method: "POST", body: JSON.stringify(input) }),
+      request<KnowledgeDocumentDto[]>(`/projects/${projectId}/knowledge-bases/${kbId}/documents`),
+    ingest: (projectId: string, kbId: string, input: IngestKnowledgeDocumentRequest) =>
+      request<KnowledgeDocumentDto>(`/projects/${projectId}/knowledge-bases/${kbId}/documents`, { method: "POST", body: JSON.stringify(input) }),
+    chunks: (projectId: string, kbId: string, documentId: string) =>
+      request<KnowledgeChunkDto[]>(`/projects/${projectId}/knowledge-bases/${kbId}/documents/${documentId}/chunks`),
     diagnose: (projectId: string, query: string) =>
-      request(`/projects/${projectId}/retrieval/query`, { method: "POST", body: JSON.stringify({ query }) }),
+      request<KnowledgeRetrievalDiagnosticDto>(`/projects/${projectId}/retrieval/query`, { method: "POST", body: JSON.stringify({ query }) }),
   },
 };

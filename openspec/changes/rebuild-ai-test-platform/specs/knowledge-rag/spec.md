@@ -18,6 +18,11 @@ The system SHALL ingest supported document types, extract text, split content in
 - **WHEN** a user uploads a supported document
 - **THEN** the system MUST extract text, create retrievable chunks, and store source filename, section, page or location metadata when available.
 
+#### Scenario: User reviews document chunk details
+
+- **WHEN** a project member opens an ingested document
+- **THEN** the system MUST show its chunk count, chunk order, token count, text preview, and source metadata, and MUST NOT expose documents or chunks from another project.
+
 ### Requirement: Knowledge is embedded and retrievable
 
 The system SHALL generate embeddings for document chunks and support semantic retrieval through a replaceable retrieval backend.
@@ -44,3 +49,8 @@ The system SHALL expose retrieval diagnostics for query, matched chunks, scores,
 
 - **WHEN** a user opens the AI generation trace
 - **THEN** the system MUST show retrieved sources and enough metadata to judge whether the generation used appropriate context.
+
+#### Scenario: User runs retrieval diagnostics from Knowledge
+
+- **WHEN** a project member runs a retrieval diagnostic query
+- **THEN** the system MUST show backend/model, matched chunk scores, selected sources, text previews, filenames, sections, pages, and document references in a structured UI rather than raw JSON.

@@ -7,6 +7,8 @@ import type {
   RetrievalDiagnostic,
 } from "./retrieval-backend.interface";
 
+const PGVECTOR_DIMS = 1536;
+
 /**
  * pgvector adapter (R9 / knowledge-rag.3) — the first RetrievalBackend impl.
  *
@@ -25,7 +27,7 @@ import type {
 export class RetrievalBackendService implements RetrievalBackend {
   readonly backendName = "pgvector";
   private readonly logger = new Logger(RetrievalBackendService.name);
-  private dims = 1536;
+  private infrastructureReady: Promise<void> | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -50,15 +52,18 @@ export class RetrievalBackendService implements RetrievalBackend {
       }
       const json = (await res.json()) as { data?: Array<{ embedding?: number[] }> };
       const vec = json.data?.[0]?.embedding;
-      if (vec && vec.length > 0) {
-        this.dims = vec.length;
+      if (vec?.length === PGVECTOR_DIMS) {
         return vec;
+      }
+      if (vec?.length) {
+        this.logger.warn(`embeddings provider returned ${vec.length} dims; expected ${PGVECTOR_DIMS}; using stub vector`);
       }
     }
     return this.stubVector(text);
   }
 
   async store(chunkId: string, embedding: number[], _model: string): Promise<string> {
+    await this.ensureInfrastructure();
     const id = chunkId; // vectorRef = chunkId (1:1 with embedding_vector row)
     const vecLit = `[${embedding.join(",")}]`;
     await this.prisma.$executeRaw`
@@ -74,6 +79,7 @@ export class RetrievalBackendService implements RetrievalBackend {
     queryText: string,
     topK = 5,
   ): Promise<RetrievedChunk[]> {
+    await this.ensureInfrastructure();
     const qv = await this.embed(queryText);
     const qLit = `[${qv.join(",")}]`;
     // R9: raw SQL ANN (cosine distance) over the raw embedding_vector table,
@@ -133,14 +139,52 @@ export class RetrievalBackendService implements RetrievalBackend {
     }
   }
 
+  /**
+   * Prisma cannot model pgvector columns, so the raw embedding table is managed
+   * by SQL migrations. Keep a lazy idempotent guard for older local databases
+   * created by Prisma table drift without the raw vector relation; this avoids
+   * startup-time DDL while keeping ingest/retrieval from failing with a missing
+   * relation 500 when the adapter is first used.
+   */
+  private async ensureInfrastructure(): Promise<void> {
+    this.infrastructureReady ??= this.createInfrastructure().catch((err) => {
+      this.infrastructureReady = null;
+      throw err;
+    });
+    return this.infrastructureReady;
+  }
+
+  private async createInfrastructure(): Promise<void> {
+    await this.prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS "vector"`);
+    await this.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "embedding_vector" (
+        "id" TEXT PRIMARY KEY,
+        "chunk_id" TEXT UNIQUE NOT NULL,
+        "embedding" vector(${PGVECTOR_DIMS}) NOT NULL
+      )
+    `);
+    await this.prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        BEGIN
+          CREATE INDEX IF NOT EXISTS "embedding_vector_embedding_hnsw_idx"
+            ON "embedding_vector" USING hnsw ("embedding" vector_cosine_ops);
+        EXCEPTION WHEN feature_not_supported THEN
+          CREATE INDEX IF NOT EXISTS "embedding_vector_embedding_ivfflat_idx"
+            ON "embedding_vector" USING ivfflat ("embedding" vector_cosine_ops) WITH (lists = 100);
+        END;
+      END $$
+    `);
+  }
+
   /** Deterministic stub vector for dev/CI without a real embeddings provider. */
   private stubVector(text: string): number[] {
-    const vec = new Array(this.dims).fill(0);
+    const vec = new Array(PGVECTOR_DIMS).fill(0);
     const tokens = text.toLowerCase().split(/\W+/).filter(Boolean);
     for (const t of tokens) {
       let h = 0;
       for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
-      vec[h % this.dims] += 1;
+      vec[h % PGVECTOR_DIMS] += 1;
     }
     // L2 normalize.
     const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0)) || 1;
