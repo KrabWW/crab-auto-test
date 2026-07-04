@@ -10,6 +10,7 @@ import type {
   UserDto,
   LoginRequest,
   AuditLogDto,
+  ModuleDto,
   ProjectDto,
   ProjectWorkspaceSummaryDto,
   CreateProjectRequest,
@@ -129,6 +130,9 @@ export const api = {
     list: (projectId: string) => request<TestCaseDto[]>(`/projects/${projectId}/test-cases`),
     create: (projectId: string, req: CreateTestCaseRequest) =>
       request<TestCaseDto>(`/projects/${projectId}/test-cases`, { method: "POST", body: JSON.stringify(req) }),
+  },
+  modules: {
+    list: (projectId: string) => request<ModuleDto[]>(`/projects/${projectId}/modules`),
   },
   testSuites: {
     list: (projectId: string) => request<TestSuiteDto[]>(`/projects/${projectId}/test-suites`),
