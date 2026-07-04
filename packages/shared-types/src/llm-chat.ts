@@ -55,6 +55,11 @@ export interface ChatSessionDto {
   projectId: string;
   providerId: string;
   title: string;
+  systemPrompt?: string;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalTokens: number;
+  requestCount: number;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -66,6 +71,7 @@ export interface ChatSessionDto {
 export interface CreateChatSessionRequest {
   title?: string;
   providerId?: string;
+  systemPrompt?: string;
 }
 
 export interface SendChatMessageRequest {

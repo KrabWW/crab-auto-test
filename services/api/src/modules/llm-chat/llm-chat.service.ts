@@ -20,6 +20,11 @@ interface SessionRow {
   projectId: string;
   providerId: string;
   title: string;
+  systemPrompt: string | null;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalTokens: number;
+  requestCount: number;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -96,8 +101,9 @@ export class LlmChatService {
   async createSession(projectId: string, actorId: string, req: CreateChatSessionRequest): Promise<ChatSessionDto> {
     const providerId = await this.resolveProviderId(projectId, req.providerId);
     const title = req.title?.trim() || "New chat";
+    const systemPrompt = req.systemPrompt?.trim() || null;
     const session = await this.prisma.chatSession.create({
-      data: { projectId, providerId, title, createdBy: actorId },
+      data: { projectId, providerId, title, systemPrompt, createdBy: actorId },
       include: this.includeDetails,
     });
     await this.audit.record({
@@ -107,7 +113,7 @@ export class LlmChatService {
       targetType: "chat-session",
       targetId: session.id,
       outcome: "success",
-      metadata: { providerId },
+      metadata: { providerId, hasSystemPrompt: systemPrompt !== null },
     });
     return this.toSessionDto(session);
   }
@@ -166,6 +172,7 @@ export class LlmChatService {
       rag.blocks,
       Boolean(req.ragEnabled),
       contextRefs.length,
+      session.systemPrompt,
     );
     const nextSeq = await this.allocateSequences(sessionId);
 
@@ -325,16 +332,42 @@ export class LlmChatService {
     ragBlocks: string[],
     ragEnabled: boolean,
     contextCount: number,
+    systemPromptOverride: string | null,
   ) {
     try {
-      return await this.llm.complete({
+      const result = await this.llm.complete({
         providerId,
         projectId,
         userMessage: content,
         history,
         contextBlocks,
         ragBlocks,
+        ...(systemPromptOverride ? { systemPromptOverride } : {}),
       });
+      // Persist per-request token usage and roll up session totals.
+      await this.prisma.chatTokenUsage.create({
+        data: {
+          projectId,
+          sessionId,
+          providerId: result.providerId,
+          modelUsed: result.modelUsed,
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          totalTokens: result.usage.totalTokens,
+          cacheReadTokens: result.usage.cacheReadTokens,
+          createdBy: actorId,
+        },
+      });
+      await this.prisma.chatSession.update({
+        where: { id: sessionId },
+        data: {
+          totalInputTokens: { increment: result.usage.inputTokens },
+          totalOutputTokens: { increment: result.usage.outputTokens },
+          totalTokens: { increment: result.usage.totalTokens },
+          requestCount: { increment: 1 },
+        },
+      });
+      return result;
     } catch (error) {
       await this.recordActivity(sessionId, projectId, undefined, "model", "Model response", "failed", {
         providerId,
@@ -387,6 +420,11 @@ export class LlmChatService {
       projectId: row.projectId,
       providerId: row.providerId,
       title: row.title,
+      ...(row.systemPrompt ? { systemPrompt: row.systemPrompt } : {}),
+      totalInputTokens: row.totalInputTokens,
+      totalOutputTokens: row.totalOutputTokens,
+      totalTokens: row.totalTokens,
+      requestCount: row.requestCount,
       createdBy: row.createdBy,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

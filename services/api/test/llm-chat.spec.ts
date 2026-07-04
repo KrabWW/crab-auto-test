@@ -10,6 +10,11 @@ function sessionRow(overrides: Record<string, unknown> = {}) {
     projectId: "project-a",
     providerId: "provider-1",
     title: "New chat",
+    systemPrompt: null,
+    totalInputTokens: 0,
+    totalOutputTokens: 0,
+    totalTokens: 0,
+    requestCount: 0,
     createdBy: "user-a",
     createdAt: now,
     updatedAt: now,
@@ -51,7 +56,15 @@ function makeService(
       }),
       ...knowledgeOverrides,
     } as never,
-    { complete: vi.fn().mockResolvedValue({ content: "Test saved-card checkout.", modelUsed: "gpt-test", providerId: "provider-1" }), ...overrides } as never,
+    {
+      complete: vi.fn().mockResolvedValue({
+        content: "Test saved-card checkout.",
+        modelUsed: "gpt-test",
+        providerId: "provider-1",
+        usage: { inputTokens: 120, outputTokens: 45, totalTokens: 165, cacheReadTokens: 0 },
+      }),
+      ...overrides,
+    } as never,
   );
 }
 
@@ -131,6 +144,7 @@ describe("llm chat sessions", () => {
       chatMessage: { create: chatMessageCreate, findFirst: vi.fn().mockResolvedValue(null) },
       chatActivity: { create: activityCreate },
       chatGeneratedArtifact: { create: artifactCreate },
+      chatTokenUsage: { create: vi.fn().mockResolvedValue({}) },
     });
 
     const dto = await svc.sendMessage("project-a", "chat-1", "user-a", {
@@ -192,6 +206,7 @@ describe("llm chat sessions", () => {
             createdAt: now,
           }),
         },
+        chatTokenUsage: { create: vi.fn().mockResolvedValue({}) },
       },
       {},
       { retrieveForGeneration: vi.fn().mockRejectedValue(new Error("missing vector table")) },
