@@ -13,6 +13,6 @@ import { LlmDraftService } from "./llm-draft.service";
   imports: [AuditModule, KnowledgeModule, McpModule, ModelProvidersModule, SkillsModule, TestAssetsModule],
   controllers: [AiOrchestrationController],
   providers: [AiOrchestrationService, LlmDraftService],
-  exports: [AiOrchestrationService],
+  exports: [AiOrchestrationService, LlmDraftService],
 })
 export class AiOrchestrationModule {}

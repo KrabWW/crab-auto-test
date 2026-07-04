@@ -36,6 +36,7 @@ import type {
   CreateApiRunRequest,
   RequirementDto,
   RequirementDocumentDto,
+  RequirementModuleDto,
   RequirementVersionDto,
   CreateRequirementRequest,
   UpdateRequirementRequest,
@@ -237,6 +238,23 @@ export const api = {
     remove: (projectId: string, docId: string) =>
       request<{ ok: boolean }>(`/projects/${projectId}/requirements/documents/${docId}`, {
         method: "DELETE",
+      }),
+  },
+  requirementModules: {
+    list: (projectId: string, docId: string) =>
+      request<RequirementModuleDto[]>(`/projects/${projectId}/requirements/documents/${docId}/modules`),
+    split: (projectId: string, docId: string) =>
+      request<RequirementModuleDto[]>(`/projects/${projectId}/requirements/documents/${docId}/split-modules`, {
+        method: "POST",
+      }),
+    update: (projectId: string, docId: string, modules: Array<{ title: string; content: string; order: number }>) =>
+      request<RequirementModuleDto[]>(`/projects/${projectId}/requirements/documents/${docId}/modules`, {
+        method: "PATCH",
+        body: JSON.stringify({ modules }),
+      }),
+    promote: (projectId: string, moduleId: string) =>
+      request<RequirementDto>(`/projects/${projectId}/requirements/modules/${moduleId}/promote`, {
+        method: "POST",
       }),
   },
   chat: {

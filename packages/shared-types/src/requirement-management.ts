@@ -121,7 +121,29 @@ export interface UpdateRequirementModulesRequest {
   }>;
 }
 
+/** LLM output for module splitting — no persistence; consumed by service. */
+export interface RequirementModuleSplit {
+  title: string;
+  content: string;
+  order: number;
+  confidence: number;
+}
+
 // ─── AI review reports ─────────────────────────────────────────────────────
+
+/** LLM output for review — no persistence; consumed by service. */
+export interface RequirementReviewDimensionResult {
+  clarityScore: number;
+  completenessScore: number;
+  testabilityScore: number;
+  boundariesScore: number;
+  overallScore: number;
+  issues: RequirementReviewIssue[];
+  improvements: string[];
+}
+
+/** Alias kept for clarity in the LLM service boundary. */
+export type RequirementReviewResult = RequirementReviewDimensionResult;
 
 export type RequirementReviewStatus =
   | "pending"
