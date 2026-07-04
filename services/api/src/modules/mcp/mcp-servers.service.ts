@@ -10,6 +10,23 @@ import type {
   UpdateMcpServerRequest,
 } from "@crab/shared-types";
 
+/**
+ * Race a promise against a timeout. Rejects with `message` if the timeout
+ * fires before the underlying promise settles. Used to bound MCP server
+ * network calls so a silent server cannot hang sync flows.
+ */
+async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 const ALLOWED_TRANSPORTS = new Set(["streamable-http", "http", "sse"]);
 
 interface ServerRow {
@@ -162,7 +179,11 @@ export class McpServersService {
     }
 
     try {
-      const toolsResponse = await client.listTools();
+      const toolsResponse = await withTimeout(
+        client.listTools(),
+        15_000,
+        "MCP server listTools timed out (15s)",
+      );
       const tools = toolsResponse.tools ?? [];
       const syncedTools: McpServerSyncResult["syncedTools"] = [];
 
@@ -245,7 +266,9 @@ export class McpServersService {
   private async buildClient(serverUrl: string): Promise<Client> {
     const client = new Client({ name: "crab-api", version: "0.0.0" });
     const transport = new StreamableHTTPClientTransport(new URL(serverUrl));
-    await client.connect(transport);
+    // Bound connect attempt so a silent/unreachable MCP server cannot hang the
+    // sync flow indefinitely. 10s matches the report's MCP UX hardening note.
+    await withTimeout(client.connect(transport), 10_000, "MCP server connect timed out (10s)");
     return client;
   }
 
