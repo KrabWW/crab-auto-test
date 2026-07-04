@@ -32,6 +32,11 @@ import { redactString } from "./redact";
 const API_BASE = process.env.CRAB_API_BASE ?? "http://localhost:3000/api/v1";
 const POLL_MS = Number(process.env.WORKER_POLL_MS ?? 2000);
 const ARTIFACT_MAX_BYTES = Number(process.env.WORKER_ARTIFACT_MAX_BYTES ?? 10 * 1024 * 1024);
+const INLINE_ARTIFACT_MAX_BYTES = Number(
+  process.env.CRAB_WORKER_INLINE_ARTIFACT_MAX_BYTES ?? 512 * 1024,
+);
+const HEADLESS = process.env.CRAB_WORKER_HEADLESS !== "false";
+const BROWSER_EXECUTABLE = process.env.CRAB_WORKER_BROWSER_EXECUTABLE?.trim();
 
 let running = true;
 let activeJob: WorkerJob | null = null;
@@ -95,9 +100,11 @@ async function executeJob(job: WorkerJob, token: string): Promise<void> {
   let browser;
   try {
     // SEC-PW-5: isolated ephemeral browser profile via launchPersistentContext.
-    browser = await chromium.launchPersistentContext(profileDir, {
-      headless: true,
-    });
+    const launchOptions: Parameters<typeof chromium.launchPersistentContext>[1] = {
+      headless: HEADLESS,
+    };
+    if (BROWSER_EXECUTABLE) launchOptions.executablePath = BROWSER_EXECUTABLE;
+    browser = await chromium.launchPersistentContext(profileDir, launchOptions);
     const context = browser;
 
     // SEC-PW-3: route-level network policy.
@@ -146,9 +153,6 @@ async function executeJob(job: WorkerJob, token: string): Promise<void> {
       }
     }
 
-    await context.tracing.stop({ path: tracePath });
-    await context.close();
-
     // SEC-PW-6: capture artifacts, enforce size limits, register metadata.
     const artifacts: WorkerArtifactMeta[] = [];
 
@@ -159,6 +163,9 @@ async function executeJob(job: WorkerJob, token: string): Promise<void> {
         artifacts.push(toArtifactMeta(job.jobId, "screenshot", "screenshot.png", screenshotBuf));
       }
     } catch {}
+
+    await context.tracing.stop({ path: tracePath });
+    await context.close();
 
     // Trace file.
     try {
@@ -176,11 +183,11 @@ async function executeJob(job: WorkerJob, token: string): Promise<void> {
       toArtifactMeta(job.jobId, "log", "execution.log", Buffer.from(logText, "utf8")),
     );
 
-    if (artifacts.length) {
+    for (const artifact of artifacts) {
       await send(token, job.jobId, {
         kind: "artifacts",
         jobId: job.jobId,
-        artifacts,
+        artifacts: [artifact],
         ts: new Date().toISOString(),
       });
     }
@@ -215,17 +222,28 @@ async function runStep(
   const action = step.action.trim();
   if (/^https?:\/\//i.test(action)) {
     await page.goto(action, { waitUntil: "domcontentloaded", timeout: 15000 });
+    await page.waitForLoadState("networkidle", { timeout: 3000 }).catch(() => {});
     return;
   }
   // Heuristic: "click <selector>" or "fill <selector> <value>".
   const clickMatch = /^click\s+(.+)$/i.exec(action);
   if (clickMatch) {
     await page.click(clickMatch[1]!, { timeout: 10000 });
+    await page.waitForLoadState("networkidle", { timeout: 3000 }).catch(() => {});
     return;
   }
   const fillMatch = /^fill\s+(\S+)\s+(.+)$/i.exec(action);
   if (fillMatch) {
     await page.fill(fillMatch[1]!, fillMatch[2]!, { timeout: 10000 });
+    return;
+  }
+  const expectTextMatch = /^expect\s+text\s+(.+)$/i.exec(action);
+  if (expectTextMatch) {
+    await page
+      .getByText(expectTextMatch[1]!, { exact: false })
+      .first()
+      .waitFor({ state: "visible", timeout: 15000 });
+    await page.waitForTimeout(500);
     return;
   }
   // Default: treat as a no-op assertion-style action (MVP placeholder for richer DSL = Phase 3).
@@ -256,9 +274,22 @@ function toArtifactMeta(
     sizeBytes: bytes,
     checksum: `sha256:${createHash("sha256").update(buf).digest("hex")}`,
     capturedAt: new Date().toISOString(),
+    metadata: truncated || bytes > INLINE_ARTIFACT_MAX_BYTES
+      ? { mimeType: mimeTypeFor(type) }
+      : {
+          mimeType: mimeTypeFor(type),
+          // ponytail: inline bytes; replace with blob storage when artifacts get large.
+          contentBase64: buf.toString("base64"),
+        },
     truncated,
     storageRef: `worker://${jobId}/${filename}`,
   };
+}
+
+function mimeTypeFor(type: "screenshot" | "log" | "trace" | "report"): string {
+  if (type === "screenshot") return "image/png";
+  if (type === "log" || type === "report") return "text/plain";
+  return "application/zip";
 }
 
 function readFileSyncSafe(p: string): Buffer | null {

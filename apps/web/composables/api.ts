@@ -67,9 +67,20 @@ import type {
   IngestKnowledgeDocumentRequest,
 } from "@crab/shared-types";
 
-const API_BASE =
-  (import.meta as unknown as { env?: Record<string, string> }).env
-    ?.NUXT_PUBLIC_API_BASE ?? "http://localhost:3000/api/v1";
+const DEFAULT_API_BASE = "http://localhost:3000/api/v1";
+
+function apiBase(): string {
+  const viteBase = (import.meta as unknown as { env?: Record<string, string | undefined> }).env
+    ?.NUXT_PUBLIC_API_BASE;
+  if (viteBase) return viteBase;
+
+  try {
+    const configured = useRuntimeConfig().public.apiBase;
+    return typeof configured === "string" && configured ? configured : DEFAULT_API_BASE;
+  } catch {
+    return DEFAULT_API_BASE;
+  }
+}
 
 function authHeaders(): Record<string, string> {
   if (!import.meta.client) return {};
@@ -81,7 +92,7 @@ function authHeaders(): Record<string, string> {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const hasBody = init?.body !== undefined && init.body !== null;
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${apiBase()}${path}`, {
     ...init,
     headers: { ...(hasBody ? { "Content-Type": "application/json" } : {}), ...authHeaders(), ...(init?.headers ?? {}) },
   });
@@ -263,7 +274,7 @@ export const api = {
       const form = new FormData();
       form.append("file", file);
       const token = (typeof localStorage !== "undefined" && localStorage.getItem("crab.token")) || "";
-      const res = await fetch(`${API_BASE}/projects/${projectId}/requirements/documents`, {
+      const res = await fetch(`${apiBase()}/projects/${projectId}/requirements/documents`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: form,

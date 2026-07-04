@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
 import { ModelProvidersService } from "../model-providers/model-providers.service";
+import { invokeAnthropicText, isAnthropicCompatibleBaseUrl } from "../../infra/llm/anthropic-compatible";
 import type { ChatMessageDto } from "@crab/shared-types";
 
 export interface ChatCompletionInput {
@@ -36,15 +37,38 @@ export class ChatLlmService {
 
   async complete(input: ChatCompletionInput): Promise<ChatCompletionResult> {
     const provider = await this.resolveProvider(input.providerId, input.projectId);
+    this.logger.log(`chat completion via ${provider.modelName}`);
+    const systemPrompt = this.systemPrompt(input.contextBlocks, input.ragBlocks, input.systemPromptOverride);
+
+    if (isAnthropicCompatibleBaseUrl(provider.baseUrl)) {
+      const result = await invokeAnthropicText(provider, {
+        system: systemPrompt,
+        messages: [
+          ...input.history.slice(-12).map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
+          { role: "user", content: input.userMessage },
+        ],
+        temperature: 0.2,
+        maxTokens: 2048,
+      });
+      return {
+        content: result.content,
+        modelUsed: provider.modelName,
+        providerId: provider.id,
+        usage: result.usage,
+      };
+    }
+
     const model = new ChatOpenAI({
       model: provider.modelName,
       configuration: { baseURL: provider.baseUrl },
       apiKey: provider.credential,
       temperature: 0.2,
     });
-    this.logger.log(`chat completion via ${provider.modelName}`);
     const messages = [
-      new SystemMessage(this.systemPrompt(input.contextBlocks, input.ragBlocks, input.systemPromptOverride)),
+      new SystemMessage(systemPrompt),
       ...input.history.slice(-12).map((message) =>
         message.role === "assistant" ? new AIMessage(message.content) : new HumanMessage(message.content),
       ),

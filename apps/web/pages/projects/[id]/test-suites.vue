@@ -359,8 +359,10 @@ async function runConfirmed() {
     selected.value = null;
     await load();
   } else if (action === "run") {
-    lastRun.value = await api.testSuites.run(projectId, selected.value.id, { environment: "local" });
+    const run = await api.testSuites.run(projectId, selected.value.id, { environment: "local" });
     await load();
+    lastRun.value = run;
+    recentRun.value = run;
   }
 }
 

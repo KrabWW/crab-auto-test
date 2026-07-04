@@ -13,6 +13,7 @@ import { Injectable, Logger, BadRequestException } from "@nestjs/common";
 import { ChatOpenAI } from "@langchain/openai";
 import { z } from "zod";
 import { ModelProvidersService } from "../model-providers/model-providers.service";
+import { invokeAnthropicTool, isAnthropicCompatibleBaseUrl } from "../../infra/llm/anthropic-compatible";
 import type {
   DraftTestCaseDto,
   RequirementModuleSplit,
@@ -39,6 +40,44 @@ const DraftCasesSchema = z.object({
   cases: z.array(DraftCaseSchema).min(1).max(5).describe("Generated test cases"),
 });
 
+const DraftCasesJsonSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["cases"],
+  properties: {
+    cases: {
+      type: "array",
+      minItems: 1,
+      maxItems: 5,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["title", "priority", "steps"],
+        properties: {
+          title: { type: "string" },
+          priority: { type: "string", enum: ["low", "medium", "high", "critical"] },
+          preconditions: { type: "string" },
+          steps: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["order", "action"],
+              properties: {
+                order: { type: "number" },
+                action: { type: "string" },
+                expectedResult: { type: "string" },
+              },
+            },
+          },
+          expectedResults: { type: "string" },
+        },
+      },
+    },
+  },
+};
+
 const ModuleSplitItemSchema = z.object({
   title: z.string().describe("Short module name"),
   content: z.string().describe("Requirement text belonging to this module"),
@@ -49,6 +88,30 @@ const ModuleSplitItemSchema = z.object({
 const ModuleSplitSchema = z.object({
   modules: z.array(ModuleSplitItemSchema).min(1).max(15).describe("Functional modules"),
 });
+
+const ModuleSplitJsonSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["modules"],
+  properties: {
+    modules: {
+      type: "array",
+      minItems: 1,
+      maxItems: 15,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["title", "content", "order", "confidence"],
+        properties: {
+          title: { type: "string" },
+          content: { type: "string" },
+          order: { type: "number" },
+          confidence: { type: "number", minimum: 0, maximum: 1 },
+        },
+      },
+    },
+  },
+};
 
 const ReviewIssueSchema = z.object({
   severity: z.enum(["high", "medium", "low"]).describe("Issue severity"),
@@ -65,6 +128,42 @@ const ReviewSchema = z.object({
   issues: z.array(ReviewIssueSchema).max(20),
   improvements: z.array(z.string()).max(10),
 });
+
+const ReviewJsonSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "clarityScore",
+    "completenessScore",
+    "testabilityScore",
+    "boundariesScore",
+    "overallScore",
+    "issues",
+    "improvements",
+  ],
+  properties: {
+    clarityScore: { type: "number", minimum: 0, maximum: 100 },
+    completenessScore: { type: "number", minimum: 0, maximum: 100 },
+    testabilityScore: { type: "number", minimum: 0, maximum: 100 },
+    boundariesScore: { type: "number", minimum: 0, maximum: 100 },
+    overallScore: { type: "number", minimum: 0, maximum: 100 },
+    issues: {
+      type: "array",
+      maxItems: 20,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["severity", "message"],
+        properties: {
+          severity: { type: "string", enum: ["high", "medium", "low"] },
+          message: { type: "string" },
+          suggestion: { type: "string" },
+        },
+      },
+    },
+    improvements: { type: "array", maxItems: 10, items: { type: "string" } },
+  },
+};
 
 export interface DraftGenerationResult {
   cases: DraftTestCaseDto[];
@@ -97,22 +196,25 @@ export class LlmDraftService {
     projectId: string,
   ): Promise<DraftGenerationResult> {
     const provider = await this.resolveProvider(providerId, projectId);
-    const model = new ChatOpenAI({
-      model: provider.modelName,
-      configuration: { baseURL: provider.baseUrl },
-      apiKey: provider.credential,
-      temperature: 0.3,
-    });
-
-    const structured = model.withStructuredOutput(DraftCasesSchema, {
-      name: "draft_test_cases",
-      method: "jsonSchema",
-    });
-
     const prompt = this.buildPrompt(requirementText);
     this.logger.log(`drafting from requirement (${requirementText.length} chars) via ${provider.modelName}`);
-
-    const result = await structured.invoke(prompt);
+    const result = isAnthropicCompatibleBaseUrl(provider.baseUrl)
+      ? await invokeAnthropicTool(provider, {
+          prompt,
+          toolName: "draft_test_cases",
+          inputSchema: DraftCasesJsonSchema,
+          temperature: 0.3,
+          maxTokens: 2048,
+          parse: (value) => DraftCasesSchema.parse(value),
+        })
+      : await new ChatOpenAI({
+          model: provider.modelName,
+          configuration: { baseURL: provider.baseUrl },
+          apiKey: provider.credential,
+          temperature: 0.3,
+        })
+          .withStructuredOutput(DraftCasesSchema, { name: "draft_test_cases", method: "jsonSchema" })
+          .invoke(prompt);
     const cases: DraftTestCaseDto[] = result.cases.map((c) => ({
       title: c.title,
       priority: c.priority,
@@ -138,18 +240,6 @@ export class LlmDraftService {
     projectId: string,
   ): Promise<ModuleSplitResult> {
     const provider = await this.resolveProvider(providerId, projectId);
-    const model = new ChatOpenAI({
-      model: provider.modelName,
-      configuration: { baseURL: provider.baseUrl },
-      apiKey: provider.credential,
-      temperature: 0.2,
-    });
-
-    const structured = model.withStructuredOutput(ModuleSplitSchema, {
-      name: "split_requirement_into_modules",
-      method: "jsonSchema",
-    });
-
     const prompt = [
       "You are a software test analyst. Split the requirements document below into modules that can be tested independently.",
       "",
@@ -165,7 +255,23 @@ export class LlmDraftService {
     ].join("\n");
 
     this.logger.log(`splitting modules (${documentText.length} chars) via ${provider.modelName}`);
-    const result = await structured.invoke(prompt);
+    const result = isAnthropicCompatibleBaseUrl(provider.baseUrl)
+      ? await invokeAnthropicTool(provider, {
+          prompt,
+          toolName: "split_requirement_into_modules",
+          inputSchema: ModuleSplitJsonSchema,
+          temperature: 0.2,
+          maxTokens: 4096,
+          parse: (value) => ModuleSplitSchema.parse(value),
+        })
+      : await new ChatOpenAI({
+          model: provider.modelName,
+          configuration: { baseURL: provider.baseUrl },
+          apiKey: provider.credential,
+          temperature: 0.2,
+        })
+          .withStructuredOutput(ModuleSplitSchema, { name: "split_requirement_into_modules", method: "jsonSchema" })
+          .invoke(prompt);
     const modules: RequirementModuleSplit[] = result.modules.map((m) => ({
       title: m.title,
       content: m.content,
@@ -185,18 +291,6 @@ export class LlmDraftService {
     projectId: string,
   ): Promise<ReviewResultData> {
     const provider = await this.resolveProvider(providerId, projectId);
-    const model = new ChatOpenAI({
-      model: provider.modelName,
-      configuration: { baseURL: provider.baseUrl },
-      apiKey: provider.credential,
-      temperature: 0.2,
-    });
-
-    const structured = model.withStructuredOutput(ReviewSchema, {
-      name: "review_requirement_document",
-      method: "jsonSchema",
-    });
-
     const prompt = [
       "You are a senior test architect. Review the requirements document below across four dimensions:",
       "",
@@ -216,7 +310,23 @@ export class LlmDraftService {
     ].join("\n");
 
     this.logger.log(`reviewing document (${documentText.length} chars) via ${provider.modelName}`);
-    const result = await structured.invoke(prompt);
+    const result = isAnthropicCompatibleBaseUrl(provider.baseUrl)
+      ? await invokeAnthropicTool(provider, {
+          prompt,
+          toolName: "review_requirement_document",
+          inputSchema: ReviewJsonSchema,
+          temperature: 0.2,
+          maxTokens: 4096,
+          parse: (value) => ReviewSchema.parse(value),
+        })
+      : await new ChatOpenAI({
+          model: provider.modelName,
+          configuration: { baseURL: provider.baseUrl },
+          apiKey: provider.credential,
+          temperature: 0.2,
+        })
+          .withStructuredOutput(ReviewSchema, { name: "review_requirement_document", method: "jsonSchema" })
+          .invoke(prompt);
 
     const issues: RequirementReviewIssue[] = result.issues.map((i) => ({
       severity: i.severity,

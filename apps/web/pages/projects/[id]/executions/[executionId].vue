@@ -110,6 +110,25 @@
                     <pre class="whitespace-pre-wrap">{{ formatValue(value) }}</pre>
                   </div>
                 </div>
+                <div v-if="artifactDataUrl(artifact)" class="mt-3">
+                  <img
+                    v-if="artifact.type === 'screenshot'"
+                    :src="artifactDataUrl(artifact)"
+                    :alt="artifact.filename"
+                    class="max-h-[520px] w-full rounded-md border object-contain"
+                  />
+                  <pre
+                    v-else-if="artifact.type === 'log' || artifact.type === 'report'"
+                    class="max-h-80 overflow-auto rounded-md bg-muted/40 p-3 text-xs"
+                  >{{ artifactText(artifact) }}</pre>
+                  <a
+                    class="inline-flex rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"
+                    :href="artifactDataUrl(artifact)"
+                    :download="artifact.filename"
+                  >
+                    Download {{ artifact.filename }}
+                  </a>
+                </div>
               </div>
             </div>
             <div v-else class="mt-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
@@ -155,7 +174,7 @@ import { computed, onMounted, ref } from "vue";
 import { api } from "~/composables/api";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import type { ExecutionDto, ExecutionSnapshot, ExecutionStatus } from "@crab/shared-types";
+import type { ExecutionArtifactDto, ExecutionDto, ExecutionSnapshot, ExecutionStatus } from "@crab/shared-types";
 
 const route = useRoute();
 const projectId = route.params.id as string;
@@ -193,7 +212,24 @@ async function load() {
 }
 
 function metadataEntries(metadata?: Record<string, unknown>) {
-  return Object.entries(metadata ?? {});
+  return Object.entries(metadata ?? {}).filter(([key]) => key !== "contentBase64");
+}
+
+function artifactDataUrl(artifact: ExecutionArtifactDto) {
+  const base64 = artifact.metadata?.contentBase64;
+  const mimeType = artifact.metadata?.mimeType;
+  if (typeof base64 !== "string" || typeof mimeType !== "string") return "";
+  return `data:${mimeType};base64,${base64}`;
+}
+
+function artifactText(artifact: ExecutionArtifactDto) {
+  const base64 = artifact.metadata?.contentBase64;
+  if (typeof base64 !== "string") return "";
+  try {
+    return atob(base64);
+  } catch {
+    return "";
+  }
 }
 
 function formatValue(value: unknown) {
