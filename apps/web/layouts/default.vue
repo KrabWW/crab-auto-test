@@ -1,16 +1,15 @@
 <template>
   <a-layout class="layout-wrapper">
-    <!-- Sider -->
     <a-layout-sider
+      v-model:collapsed="collapsed"
       :width="220"
       :collapsed-width="64"
       :collapsible="true"
-      v-model:collapsed="collapsed"
       breakpoint="lg"
       class="layout-sider"
     >
       <div class="logo">
-        <span class="logo-mark">🦀</span>
+        <span class="logo-mark">CT</span>
         <transition name="fade">
           <span v-if="!collapsed" class="logo-text">Crab Auto Test</span>
         </transition>
@@ -23,27 +22,26 @@
       >
         <a-menu-item key="projects">
           <template #icon><icon-folder /></template>
-          项目
+          Projects
         </a-menu-item>
         <a-menu-item key="audit">
           <template #icon><icon-history /></template>
-          审计日志
+          Audit Logs
         </a-menu-item>
         <a-menu-item v-if="authStore.isAdmin" key="model-providers">
           <template #icon><icon-bulb /></template>
-          模型供应商
+          Model Providers
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
 
-    <!-- Main -->
     <a-layout class="layout-main">
       <a-layout-header class="layout-header">
         <div class="header-left">
           <a-button
             type="text"
             size="small"
-            :title="collapsed ? '展开侧边栏' : '收起侧边栏'"
+            :title="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
             @click="collapsed = !collapsed"
           >
             <template #icon>
@@ -56,7 +54,7 @@
           <a-button
             type="text"
             size="small"
-            :title="theme === 'dark' ? '切换到浅色' : '切换到深色'"
+            :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
             @click="toggle"
           >
             <template #icon>
@@ -72,12 +70,12 @@
             <template #content>
               <a-doption @click="onLogout">
                 <template #icon><icon-export /></template>
-                退出登录
+                Log out
               </a-doption>
             </template>
           </a-dropdown>
           <NuxtLink v-else to="/auth/login">
-            <a-button type="text" size="small">登录</a-button>
+            <a-button type="text" size="small">Log in</a-button>
           </NuxtLink>
         </div>
       </a-layout-header>
@@ -89,13 +87,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 import { useAuthStore } from "~/stores/auth";
 import { useTheme } from "~/composables/useTheme";
 
 const authStore = useAuthStore();
 const { theme, toggle } = useTheme();
-
 const collapsed = ref(false);
 
 const selectedKeys = computed<string[]>(() => {
@@ -108,7 +105,7 @@ const selectedKeys = computed<string[]>(() => {
 
 const displayName = computed(() => {
   const u = authStore.user;
-  return u?.displayName || u?.email || "用户";
+  return u?.displayName || u?.email || "User";
 });
 
 function onMenuClick(key: string) {
@@ -151,7 +148,15 @@ function onLogout() {
   overflow: hidden;
 }
 .logo-mark {
-  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--color-primary-light-1);
+  color: var(--color-primary-6);
+  font-size: 12px;
   flex-shrink: 0;
 }
 .logo-text {

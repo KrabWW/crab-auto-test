@@ -68,7 +68,9 @@ export class ProjectsService {
     return this.toDto(p);
   }
 
-  async getWorkspaceSummary(projectId: string): Promise<ProjectWorkspaceSummaryDto> {
+  async getWorkspaceSummary(
+    projectId: string,
+  ): Promise<ProjectWorkspaceSummaryDto> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: { id: true },
@@ -77,14 +79,17 @@ export class ProjectsService {
 
     const [
       testCases,
+      aiGeneratedCases,
       testSuites,
       executions,
       queuedExecutions,
       failedExecutions,
+      reportArtifacts,
       apiCases,
       apiExecutions,
       requirements,
       approvedRequirements,
+      aiRuns,
       knowledgeBases,
       knowledgeDocuments,
       chatSessions,
@@ -92,47 +97,248 @@ export class ProjectsService {
       approvedMcpTools,
       skills,
       enabledSkills,
+      latestRequirement,
+      latestCase,
+      latestExecution,
     ] = await Promise.all([
       this.prisma.testCase.count({ where: { projectId } }),
+      this.prisma.testCase.count({
+        where: { projectId, origin: "ai_generated" },
+      }),
       this.prisma.testSuite.count({ where: { projectId } }),
       this.prisma.testExecution.count({ where: { projectId } }),
-      this.prisma.testExecution.count({ where: { projectId, status: "queued" } }),
-      this.prisma.testExecution.count({ where: { projectId, status: "failed" } }),
+      this.prisma.testExecution.count({
+        where: { projectId, status: "queued" },
+      }),
+      this.prisma.testExecution.count({
+        where: { projectId, status: "failed" },
+      }),
+      this.prisma.executionArtifact.count({
+        where: { type: "report", execution: { projectId } },
+      }),
       this.prisma.apiTestCase.count({ where: { projectId } }),
       this.prisma.apiExecution.count({ where: { projectId } }),
       this.prisma.requirement.count({ where: { projectId } }),
-      this.prisma.requirement.count({ where: { projectId, status: "approved" } }),
+      this.prisma.requirement.count({
+        where: { projectId, status: "approved" },
+      }),
+      this.prisma.aiWorkflowRun.count({ where: { projectId } }),
       this.prisma.knowledgeBase.count({ where: { projectId } }),
       this.prisma.document.count({ where: { knowledgeBase: { projectId } } }),
       this.prisma.chatSession.count({ where: { projectId } }),
       this.prisma.mcpTool.count({ where: { projectId } }),
-      this.prisma.mcpTool.count({ where: { projectId, status: "approved" } }),
+      this.prisma.mcpTool.count({
+        where: { projectId, status: "approved" },
+      }),
       this.prisma.skillInstallation.count({ where: { projectId } }),
-      this.prisma.skillInstallation.count({ where: { projectId, state: "installed" } }),
+      this.prisma.skillInstallation.count({
+        where: { projectId, state: "installed" },
+      }),
+      this.prisma.requirement.findFirst({
+        where: { projectId },
+        orderBy: { updatedAt: "desc" },
+        select: { title: true, status: true, updatedAt: true },
+      }),
+      this.prisma.testCase.findFirst({
+        where: { projectId },
+        orderBy: { updatedAt: "desc" },
+        select: { title: true, origin: true, updatedAt: true },
+      }),
+      this.prisma.testExecution.findFirst({
+        where: { projectId },
+        orderBy: { createdAt: "desc" },
+        select: { status: true, environment: true, createdAt: true },
+      }),
     ]);
+
+    const counts: ProjectWorkspaceSummaryDto["counts"] = {
+      testCases,
+      testSuites,
+      executions,
+      queuedExecutions,
+      failedExecutions,
+      reportArtifacts,
+      apiCases,
+      apiExecutions,
+      requirements,
+      approvedRequirements,
+      aiRuns,
+      aiGeneratedCases,
+      knowledgeBases,
+      knowledgeDocuments,
+      chatSessions,
+      mcpTools,
+      approvedMcpTools,
+      skills,
+      enabledSkills,
+    };
 
     return {
       projectId,
       generatedAt: new Date().toISOString(),
-      counts: {
-        testCases,
-        testSuites,
-        executions,
-        queuedExecutions,
-        failedExecutions,
-        apiCases,
-        apiExecutions,
-        requirements,
-        approvedRequirements,
-        knowledgeBases,
-        knowledgeDocuments,
-        chatSessions,
-        mcpTools,
-        approvedMcpTools,
-        skills,
-        enabledSkills,
-      },
+      counts,
+      modules: this.workspaceModules(projectId, counts),
+      recentActivity: this.recentActivity(projectId, {
+        latestRequirement,
+        latestCase,
+        latestExecution,
+      }),
     };
+  }
+
+  private workspaceModules(
+    projectId: string,
+    counts: ProjectWorkspaceSummaryDto["counts"],
+  ): ProjectWorkspaceSummaryDto["modules"] {
+    const route = (path: string) => `/projects/${projectId}/${path}`;
+
+    return [
+      {
+        key: "requirements",
+        label: "Requirements",
+        count: counts.requirements,
+        complete: counts.approvedRequirements > 0,
+        nextAction: counts.requirements
+          ? "Review and approve the next requirement"
+          : "Capture first requirement",
+        gap: counts.approvedRequirements
+          ? "Approved requirement ready for generation"
+          : "No approved requirement yet",
+        to: route("requirements"),
+      },
+      {
+        key: "ai-generation",
+        label: "AI case generation",
+        count: counts.aiRuns,
+        complete: counts.aiRuns > 0,
+        nextAction: counts.approvedRequirements
+          ? "Generate cases from an approved requirement"
+          : "Approve a requirement before generating cases",
+        gap: counts.aiRuns ? "Generation history exists" : "No generation run yet",
+        to: route("ai-generation"),
+      },
+      {
+        key: "test-cases",
+        label: "Case management",
+        count: counts.testCases,
+        complete: counts.testCases > 0,
+        nextAction: counts.testCases
+          ? "Review case coverage and ownership"
+          : "Accept generated cases or add one manually",
+        gap: counts.aiGeneratedCases
+          ? "Generated cases are linked"
+          : "No AI-generated case linked yet",
+        to: route("test-cases"),
+      },
+      {
+        key: "test-suites",
+        label: "Suite execution",
+        count: counts.testSuites,
+        complete: counts.testSuites > 0,
+        nextAction: counts.testSuites
+          ? "Run the next regression suite"
+          : "Create a suite from approved cases",
+        gap: counts.testSuites ? "Suite is available" : "No suite assembled yet",
+        to: route("test-suites"),
+      },
+      {
+        key: "executions",
+        label: "Execution queue",
+        count: counts.executions,
+        complete: counts.executions > 0,
+        nextAction: counts.queuedExecutions
+          ? "Watch queued executions"
+          : "Start a run from a case or suite",
+        gap: counts.failedExecutions
+          ? `${counts.failedExecutions} failed execution needs triage`
+          : "No failed executions",
+        to: route("executions"),
+      },
+      {
+        key: "api-automation",
+        label: "API automation",
+        count: counts.apiCases,
+        complete: counts.apiCases > 0,
+        nextAction: counts.apiCases
+          ? "Review assertions and environments"
+          : "Add API checks after the core flow is stable",
+        gap: counts.apiExecutions
+          ? "API execution evidence exists"
+          : "No API execution evidence yet",
+        to: route("api-automation"),
+      },
+      {
+        key: "reports",
+        label: "Execution report",
+        count: counts.reportArtifacts,
+        complete: counts.reportArtifacts > 0,
+        nextAction: counts.reportArtifacts
+          ? "Open the latest report artifact"
+          : "Run a suite to publish a report",
+        gap: counts.reportArtifacts ? "Report artifact available" : "No report artifact yet",
+        to: route("executions"),
+      },
+    ];
+  }
+
+  private recentActivity(
+    projectId: string,
+    activity: {
+      latestRequirement: {
+        title: string;
+        status: string;
+        updatedAt: Date;
+      } | null;
+      latestCase: {
+        title: string;
+        origin: string;
+        updatedAt: Date;
+      } | null;
+      latestExecution: {
+        status: string;
+        environment: string;
+        createdAt: Date;
+      } | null;
+    },
+  ): ProjectWorkspaceSummaryDto["recentActivity"] {
+    const items: ProjectWorkspaceSummaryDto["recentActivity"] = [];
+
+    if (activity.latestRequirement) {
+      items.push({
+        label: "Requirement updated",
+        detail: `${activity.latestRequirement.title} is ${activity.latestRequirement.status}`,
+        at: activity.latestRequirement.updatedAt.toISOString(),
+        to: `/projects/${projectId}/requirements`,
+      });
+    }
+
+    if (activity.latestCase) {
+      items.push({
+        label: "Test case updated",
+        detail: `${activity.latestCase.title} (${activity.latestCase.origin.replace("_", " ")})`,
+        at: activity.latestCase.updatedAt.toISOString(),
+        to: `/projects/${projectId}/test-cases`,
+      });
+    }
+
+    if (activity.latestExecution) {
+      items.push({
+        label: "Execution updated",
+        detail: `${activity.latestExecution.environment} run is ${activity.latestExecution.status}`,
+        at: activity.latestExecution.createdAt.toISOString(),
+        to: `/projects/${projectId}/executions`,
+      });
+    }
+
+    if (!items.length) {
+      items.push({
+        label: "Workspace is ready",
+        detail: "Capture the first requirement to begin the managed testing flow",
+        to: `/projects/${projectId}/requirements`,
+      });
+    }
+
+    return items;
   }
 
   async update(

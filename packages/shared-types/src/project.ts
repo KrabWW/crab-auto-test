@@ -36,6 +36,32 @@ export interface AddMemberRequest {
   role: ProjectRole;
 }
 
+export type ProjectWorkspaceModuleKey =
+  | "requirements"
+  | "ai-generation"
+  | "test-cases"
+  | "test-suites"
+  | "executions"
+  | "api-automation"
+  | "reports";
+
+export interface ProjectWorkspaceModuleSummaryDto {
+  key: ProjectWorkspaceModuleKey;
+  label: string;
+  count: number;
+  complete: boolean;
+  nextAction: string;
+  gap: string;
+  to: string;
+}
+
+export interface ProjectWorkspaceActivityDto {
+  label: string;
+  detail: string;
+  at?: string;
+  to: string;
+}
+
 export interface ProjectWorkspaceSummaryDto {
   projectId: string;
   generatedAt: string;
@@ -45,10 +71,13 @@ export interface ProjectWorkspaceSummaryDto {
     executions: number;
     queuedExecutions: number;
     failedExecutions: number;
+    reportArtifacts: number;
     apiCases: number;
     apiExecutions: number;
     requirements: number;
     approvedRequirements: number;
+    aiRuns: number;
+    aiGeneratedCases: number;
     knowledgeBases: number;
     knowledgeDocuments: number;
     chatSessions: number;
@@ -57,4 +86,6 @@ export interface ProjectWorkspaceSummaryDto {
     skills: number;
     enabledSkills: number;
   };
+  modules: ProjectWorkspaceModuleSummaryDto[];
+  recentActivity: ProjectWorkspaceActivityDto[];
 }

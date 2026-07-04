@@ -32,6 +32,11 @@ The web UI SHALL support project navigation, test case management, AI generation
 - **WHEN** a project member opens the project overview
 - **THEN** the UI MUST present a project-scoped workspace summary with testing assets, automation, execution, knowledge, AI, MCP, and skills signals plus quick routes into the primary workflows.
 
+#### Scenario: Project member follows the requirement-first workspace route
+
+- **WHEN** a project member opens the project list, creates a new project, or opens a project overview
+- **THEN** Requirements MUST be the first project workspace step, new projects MUST land on Requirements, and the overview MUST show the route from requirement intake, review, and approval through AI case generation, case management, suite execution, and execution report evidence.
+
 #### Scenario: Project workspace data is partially unavailable
 
 - **WHEN** workspace summary data cannot be loaded

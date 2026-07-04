@@ -2,13 +2,22 @@
   <div class="space-y-4">
     <h2 class="font-bold">AI Test Generation</h2>
     <p class="text-sm text-muted-foreground">
-      Submit freeform text or select an approved managed requirement; AI drafts test cases for review.
+      Select an approved requirement; AI drafts test cases for review.
     </p>
+    <div class="rounded-md border border-dashed p-4 text-sm">
+      <div class="font-medium">Requirement-first path</div>
+      <p class="mt-1 text-muted-foreground">
+        Create, review, and approve a requirement first. Then generate draft cases from that approved version.
+      </p>
+      <NuxtLink :to="`/projects/${projectId}/requirements`" class="mt-3 inline-block rounded border px-3 py-1.5">
+        Go to Requirements
+      </NuxtLink>
+    </div>
     <form class="space-y-3" @submit.prevent="onGenerate">
       <label class="grid gap-1 text-sm">
         <span class="font-medium">Approved requirement input</span>
         <select v-model="requirementVersionId" class="h-10 rounded-md border bg-background px-3 text-sm" aria-label="Approved requirement">
-          <option value="">Use pasted text instead</option>
+          <option value="">Fallback: paste requirement text</option>
           <option v-for="version in approvedVersions" :key="version.id" :value="version.id">
             {{ version.title }} / v{{ version.version }}
           </option>
@@ -37,6 +46,13 @@
         <button class="rounded bg-primary px-3 py-1.5 text-primary-foreground" @click="approve">Accept & persist</button>
         <button class="rounded border px-3 py-1.5" @click="reject">Reject</button>
       </div>
+      <NuxtLink
+        v-if="run.status === 'accepted' || run.status === 'completed'"
+        :to="`/projects/${projectId}/test-cases`"
+        class="inline-block rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground"
+      >
+        Open saved test cases
+      </NuxtLink>
     </div>
   </div>
 </template>
@@ -58,6 +74,10 @@ const canGenerate = computed(() => !!requirementVersionId.value || requirement.v
 
 onMounted(async () => {
   approvedVersions.value = await api.requirements.approvedVersions(projectId);
+  const requestedVersionId = route.query.requirementVersionId;
+  if (typeof requestedVersionId === "string" && approvedVersions.value.some((version) => version.id === requestedVersionId)) {
+    requirementVersionId.value = requestedVersionId;
+  }
 });
 
 async function onGenerate() {

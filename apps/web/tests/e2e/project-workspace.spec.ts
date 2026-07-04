@@ -88,15 +88,19 @@ test.describe("project workspace", () => {
 
     // Every workspace tab is rendered as a link with its accessible name.
     for (const label of [
-      "Test Cases",
-      "Executions",
+      "Requirements",
       "AI Generation",
-      "Knowledge",
+      "Test Cases",
+      "Test Suites",
       "API Automation",
+      "Executions",
+      "Knowledge",
       "Settings",
     ]) {
       await expect(nav.getByRole("link", { name: label })).toBeVisible();
     }
+
+    await expect(nav.getByRole("link").first()).toContainText("Requirements");
 
     // A tab routes away from the overview home.
     await nav.getByRole("link", { name: "Test Cases" }).click();
@@ -128,12 +132,12 @@ test.describe("project workspace", () => {
     }
     await expect(page.getByTestId("stat-test-cases")).toContainText("1");
     await expect(page.getByTestId("stat-executions")).toContainText("1");
-    await expect(page.getByText("Workspace Command Center")).toBeVisible();
-    await expect(page.getByText("Run & report")).toBeVisible();
-    await expect(page.getByText("Governance snapshot")).toBeVisible();
+    await expect(page.getByText("Requirement-first workspace")).toBeVisible();
+    await expect(page.getByText("Requirement-first acceptance route")).toBeVisible();
+    await expect(page.getByText("Module readiness")).toBeVisible();
   });
 
-  test("fresh project shows an empty state linking to AI Generation", async ({
+  test("fresh project shows a start-here path linking to Requirements", async ({
     page,
   }: {
     page: Page;
@@ -144,14 +148,11 @@ test.describe("project workspace", () => {
 
     await page.goto(`/projects/${id}`);
 
-    // A brand-new project has 0 test cases / executions / kbs → empty state.
-    const empty = page.getByTestId("empty-state");
-    await expect(empty).toBeVisible();
-
-    // Guidance steers toward AI generation, with a link to that route.
-    await expect(empty).toContainText(/AI|generat/i);
-    const link = empty.getByRole("link", { name: /AI|generat/i }).first();
-    await expect(link).toHaveAttribute("href", new RegExp(`/projects/${id}/ai-generation`));
+    // A brand-new project has 0 assets → first-run guidance.
+    await expect(page.getByText("No workspace evidence yet")).toBeVisible();
+    await expect(page.getByText("Requirement-first acceptance route")).toBeVisible();
+    const link = page.getByRole("link", { name: "Capture first requirement" }).first();
+    await expect(link).toHaveAttribute("href", new RegExp(`/projects/${id}/requirements`));
   });
 
   test("workspace summary failure is visible and recoverable", async ({ page }: { page: Page }) => {

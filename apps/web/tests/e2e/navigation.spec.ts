@@ -20,8 +20,8 @@ test.describe("navigation", () => {
     // Fresh context: no token in localStorage.
     await page.goto("/projects");
 
-    // Page still renders its chrome (header link exists in default layout).
-    await expect(page.getByRole("link", { name: /Projects/i }).first()).toBeVisible();
+    // Page still renders its chrome (side navigation exists in default layout).
+    await expect(page.getByText("Projects").first()).toBeVisible();
     // And the page-level heading is present (component mounts despite 401 from API).
     await expect(page.getByRole("heading", { name: /^Projects$/ })).toBeVisible();
   });

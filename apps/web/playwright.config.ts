@@ -1,6 +1,14 @@
+import { existsSync } from "node:fs";
 import { defineConfig } from "@playwright/test";
 
-const chromiumExecutablePath = process.env.E2E_CHROMIUM_EXECUTABLE_PATH;
+const chromiumExecutablePath =
+  process.env.E2E_CHROMIUM_EXECUTABLE_PATH ??
+  [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  ].find((candidate) => existsSync(candidate));
 
 /**
  * D1 tracer-bullet e2e config.
@@ -25,7 +33,7 @@ export default defineConfig({
   webServer: process.env.E2E_NO_WEBSERVER
     ? undefined
     : {
-        command: "pnpm dev",
+        command: "pnpm dev -- --port 3001",
         url: "http://localhost:3001",
         reuseExistingServer: true,
         timeout: 120_000,

@@ -42,15 +42,16 @@ const route = useRoute();
 const entries = computed<NavEntry[]>(() => {
   const base = `/projects/${props.projectId}`;
   return [
-    { label: "Test Cases", slug: "test-cases", to: `${base}/test-cases`, icon: ListTree },
-    { label: "AI Generation", slug: "ai-generation", to: `${base}/ai-generation`, icon: Sparkles },
     { label: "Requirements", slug: "requirements", to: `${base}/requirements`, icon: ClipboardCheck },
-    { label: "AI Chat", slug: "chat", to: `${base}/chat`, icon: BotMessageSquare },
+    { label: "AI Generation", slug: "ai-generation", to: `${base}/ai-generation`, icon: Sparkles },
+    { label: "Test Cases", slug: "test-cases", to: `${base}/test-cases`, icon: ListTree },
+    { label: "Test Suites", slug: "test-suites", to: `${base}/test-suites`, icon: PackageCheck },
+    { label: "API Automation", slug: "api-automation", to: `${base}/api-automation`, icon: Globe },
     { label: "Executions", slug: "executions", to: `${base}/executions`, icon: PlayCircle },
+    { label: "AI Chat", slug: "chat", to: `${base}/chat`, icon: BotMessageSquare },
     { label: "Knowledge", slug: "knowledge", to: `${base}/knowledge`, icon: BookOpen },
     { label: "MCP Admin", slug: "mcp-admin", to: `${base}/mcp-admin`, icon: Wrench },
     { label: "Skills", slug: "skills", to: `${base}/skills`, icon: PackageCheck },
-    { label: "API Automation", slug: "api-automation", to: `${base}/api-automation`, icon: Globe },
     { label: "Settings", slug: "settings", to: `${base}/settings`, icon: Settings },
   ];
 });

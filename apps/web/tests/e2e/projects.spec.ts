@@ -23,24 +23,27 @@ test.describe("projects page", () => {
     await loginViaUi(page);
   });
 
-  test("T4: list view renders header and new-project button", async ({ page }) => {
+  test("T4: list view renders header, pinned demo, search, and new-project button", async ({ page }) => {
     await expect(page.getByRole("heading", { name: /^Projects$/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /^New project$/ })).toBeVisible();
+    await expect(page.getByPlaceholder("Search projects by name or slug")).toBeVisible();
+    const firstCard = page.getByTestId("project-card").first();
+    await expect(firstCard).toContainText("WhartTest Demo Workspace");
   });
 
-  test("T5: create project via UI shows new entry in list", async ({ page }) => {
+  test("T5: create project via UI opens Requirements", async ({ page }) => {
     const slug = uniqueSlug("ui-create");
     const name = `UI Test ${slug}`;
 
     await page.getByRole("button", { name: /^New project$/ }).click();
 
-    await page.getByPlaceholder("Name").fill(name);
-    await page.getByPlaceholder("Slug").fill(slug);
-    await page.getByPlaceholder("Description").fill("created by e2e");
+    await page.getByPlaceholder(/Project name/).fill(name);
+    await page.getByPlaceholder(/Slug/).fill(slug);
+    await page.getByPlaceholder(/Description/).fill("created by e2e");
 
-    await page.getByRole("button", { name: /^Create$/ }).click();
+    await page.getByRole("button", { name: /^Create project$/ }).click();
 
-    // After create, projects/index.vue reloads the list; assert slug appears.
-    await expect(page.getByText(slug, { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveURL(/\/projects\/[^/]+\/requirements$/);
+    await expect(page.getByRole("heading", { name: "Requirements" })).toBeVisible();
   });
 });

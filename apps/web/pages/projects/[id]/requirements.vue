@@ -63,7 +63,7 @@
             </div>
             <div class="mt-1 line-clamp-2 text-xs text-muted-foreground">{{ requirement.content }}</div>
           </button>
-          <div v-if="!requirements.length" class="p-4 text-sm text-muted-foreground">No managed requirements yet.</div>
+          <div v-if="!requirements.length" class="p-4 text-sm text-muted-foreground">No managed requirements yet. Capture the first requirement, submit it for review, then approve it before AI generation.</div>
         </Card>
       </div>
 
@@ -77,6 +77,16 @@
             <div class="flex flex-wrap gap-2">
               <Button variant="outline" :disabled="selected.status !== 'draft'" @click="submitReview">Submit review</Button>
               <Button :disabled="selected.status !== 'reviewed'" @click="approveRequirement">Approve</Button>
+              <Button v-if="selectedApprovedVersion" as-child>
+                <NuxtLink
+                  :to="{
+                    path: `/projects/${projectId}/ai-generation`,
+                    query: { requirementVersionId: selectedApprovedVersion.id },
+                  }"
+                >
+                  Generate cases
+                </NuxtLink>
+              </Button>
             </div>
           </div>
 
@@ -144,6 +154,10 @@ const createContent = ref("");
 const editDraft = ref({ title: "", content: "" });
 
 const selected = computed(() => requirements.value.find((item) => item.id === selectedId.value) ?? null);
+const selectedApprovedVersion = computed(() => {
+  if (selected.value?.status !== "approved") return null;
+  return [...selected.value.versions].reverse().find((version) => version.status === "approved") ?? null;
+});
 const stats = computed(() => [
   { label: "Total", value: requirements.value.length, detail: "Managed requirements" },
   { label: "Draft", value: countStatus("draft"), detail: "Needs refinement" },
