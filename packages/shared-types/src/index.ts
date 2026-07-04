@@ -6,6 +6,7 @@ export * from "./project";
 export * from "./test-asset";
 export * from "./execution";
 export * from "./api-automation";
+export * from "./api-scenarios";
 export * from "./requirement-management";
 export * from "./llm-chat";
 export * from "./mcp-admin";
