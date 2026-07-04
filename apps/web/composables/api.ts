@@ -37,6 +37,7 @@ import type {
   RequirementDto,
   RequirementDocumentDto,
   RequirementModuleDto,
+  RequirementReviewReportDto,
   RequirementVersionDto,
   CreateRequirementRequest,
   UpdateRequirementRequest,
@@ -255,6 +256,17 @@ export const api = {
     promote: (projectId: string, moduleId: string) =>
       request<RequirementDto>(`/projects/${projectId}/requirements/modules/${moduleId}/promote`, {
         method: "POST",
+      }),
+  },
+  requirementReviews: {
+    list: (projectId: string, docId: string) =>
+      request<RequirementReviewReportDto[]>(`/projects/${projectId}/requirements/documents/${docId}/reports`),
+    get: (projectId: string, reportId: string) =>
+      request<RequirementReviewReportDto>(`/projects/${projectId}/requirements/review-reports/${reportId}`),
+    start: (projectId: string, docId: string) =>
+      request<RequirementReviewReportDto>(`/projects/${projectId}/requirements/documents/${docId}/start-review`, {
+        method: "POST",
+        body: JSON.stringify({}),
       }),
   },
   chat: {

@@ -6,13 +6,30 @@ import { RequirementDocumentsController } from "./requirement-documents.controll
 import { RequirementDocumentsService } from "./requirement-documents.service";
 import { RequirementModulesController } from "./requirement-modules.controller";
 import { RequirementModulesService } from "./requirement-modules.service";
+import { RequirementReviewController } from "./requirement-review.controller";
+import { RequirementReviewService } from "./requirement-review.service";
 import { RequirementsController } from "./requirements.controller";
 import { RequirementsService } from "./requirements.service";
 
 @Module({
   imports: [AuditModule, PrismaModule, AiOrchestrationModule],
-  controllers: [RequirementsController, RequirementDocumentsController, RequirementModulesController],
-  providers: [RequirementsService, RequirementDocumentsService, RequirementModulesService],
-  exports: [RequirementsService, RequirementDocumentsService, RequirementModulesService],
+  controllers: [
+    RequirementsController,
+    RequirementDocumentsController,
+    RequirementModulesController,
+    RequirementReviewController,
+  ],
+  providers: [
+    RequirementsService,
+    RequirementDocumentsService,
+    RequirementModulesService,
+    RequirementReviewService,
+  ],
+  exports: [
+    RequirementsService,
+    RequirementDocumentsService,
+    RequirementModulesService,
+    RequirementReviewService,
+  ],
 })
 export class RequirementsModule {}
