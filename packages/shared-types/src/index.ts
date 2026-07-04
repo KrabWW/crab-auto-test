@@ -3,6 +3,7 @@ export * from "./stream";
 export * from "./worker";
 export * from "./auth";
 export * from "./project";
+export * from "./project-api-key";
 export * from "./test-asset";
 export * from "./ui-automation";
 export * from "./execution";
