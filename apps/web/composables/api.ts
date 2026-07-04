@@ -14,6 +14,7 @@ import type {
   CreateTestCaseRequest,
   ExecutionDto,
   CreateExecutionRequest,
+  ExecutionSnapshot,
   AiWorkflowRunDto,
   StartTestGenerationRequest,
   ModelProviderDto,
@@ -122,6 +123,10 @@ export const api = {
   },
   executions: {
     list: (projectId: string) => request<ExecutionDto[]>(`/projects/${projectId}/executions`),
+    get: (projectId: string, executionId: string) =>
+      request<ExecutionDto>(`/projects/${projectId}/executions/${executionId}`),
+    snapshot: (projectId: string, executionId: string) =>
+      request<ExecutionSnapshot>(`/projects/${projectId}/executions/${executionId}/snapshot`),
     create: (projectId: string, req: CreateExecutionRequest) =>
       request<ExecutionDto>(`/projects/${projectId}/executions`, { method: "POST", body: JSON.stringify(req) }),
   },

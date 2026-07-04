@@ -15,6 +15,7 @@ export interface ExecutionDto {
   id: string;
   projectId: string;
   testCaseId: string;
+  testCaseTitle?: string;
   createdBy: string;
   environment: string;
   status: ExecutionStatus;

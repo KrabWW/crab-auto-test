@@ -18,6 +18,21 @@ The system SHALL link execution results to the related project, test case, step,
 - **WHEN** a test case execution completes
 - **THEN** the system MUST show pass/fail state, failed steps, screenshots, logs, trace artifact links, duration, and links back to the source test case.
 
+#### Scenario: Project member reviews the execution queue
+
+- **WHEN** a project member opens the execution list
+- **THEN** the system MUST show project-scoped queued, running, terminal, and artifact totals without listing executions from another project.
+
+#### Scenario: Project member opens an execution report
+
+- **WHEN** a project member opens an execution detail page
+- **THEN** the system MUST show execution status, environment, duration, source test case title or id, failed step, worker job id, report summary, and retained artifact metadata.
+
+#### Scenario: Client reconnects to an execution detail
+
+- **WHEN** an execution detail page refetches the execution snapshot
+- **THEN** the system MUST return the authoritative project-scoped execution status, current artifacts, and bounded live events rather than exposing a cross-project execution.
+
 ### Requirement: Execution artifacts are retained
 
 The system SHALL retain screenshots, logs, and Playwright trace artifacts for each local Playwright execution.

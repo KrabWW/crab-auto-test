@@ -121,7 +121,9 @@
           </div>
           <div class="mt-3 grid gap-2">
             <div v-for="execution in lastRun.executions" :key="execution.id" class="grid gap-2 rounded-md bg-muted/50 p-3 text-sm md:grid-cols-[1fr_120px_160px]">
-              <div class="font-medium">{{ titleFor(execution.testCaseId) }}</div>
+              <NuxtLink :to="`/projects/${projectId}/executions/${execution.id}`" class="font-medium text-primary">
+                {{ titleFor(execution.testCaseId) }}
+              </NuxtLink>
               <div>{{ execution.status }}</div>
               <div class="text-muted-foreground">{{ execution.environment }}</div>
             </div>

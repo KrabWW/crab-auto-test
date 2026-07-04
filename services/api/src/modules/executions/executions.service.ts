@@ -8,7 +8,7 @@ import type {
   ExecutionStatus,
   ExecutionArtifactType,
   CreateExecutionRequest,
-  StreamEnvelope,
+  ExecutionSnapshot,
 } from "@crab/shared-types";
 
 /** test-asset-management.2–3: execution records + artifacts + R8 streaming. */
@@ -20,6 +20,11 @@ export class ExecutionsService {
     private readonly snapshot: SnapshotService,
   ) {}
 
+  private readonly executionInclude = {
+    artifacts: { orderBy: { capturedAt: "desc" as const } },
+    testCase: { select: { title: true } },
+  };
+
   async create(
     projectId: string,
     actorId: string,
@@ -27,7 +32,7 @@ export class ExecutionsService {
   ): Promise<ExecutionDto> {
     const testCase = await this.prisma.testCase.findFirst({
       where: { id: req.testCaseId, projectId },
-      select: { id: true },
+      select: { id: true, title: true },
     });
     if (!testCase) {
       throw new BadRequestException("Test case does not belong to project");
@@ -41,7 +46,7 @@ export class ExecutionsService {
         environment: req.environment,
         status: "queued",
       },
-      include: { artifacts: true },
+      include: this.executionInclude,
     });
     this.snapshot.register(exec.id);
     await this.audit.record({
@@ -52,13 +57,13 @@ export class ExecutionsService {
       targetId: exec.id,
       outcome: "success",
     });
-    return this.toDto(exec, []);
+    return this.toDto(exec, exec.artifacts);
   }
 
   async get(projectId: string, id: string): Promise<ExecutionDto> {
     const exec = await this.prisma.testExecution.findFirst({
       where: { id, projectId },
-      include: { artifacts: true },
+      include: this.executionInclude,
     });
     if (!exec) throw new NotFoundException("Execution not found");
     return this.toDto(exec, exec.artifacts);
@@ -67,23 +72,29 @@ export class ExecutionsService {
   async list(projectId: string): Promise<ExecutionDto[]> {
     const rows = await this.prisma.testExecution.findMany({
       where: { projectId },
-      include: { artifacts: true },
+      include: this.executionInclude,
       orderBy: { startedAt: "desc" },
     });
     return rows.map((e) => this.toDto(e, e.artifacts));
   }
 
   /** R8 snapshot refetch — authoritative current state for reconnect. */
-  async getSnapshot(
-    projectId: string,
-    id: string,
-  ): Promise<{ executionId: string; events: StreamEnvelope[] }> {
+  async getSnapshot(projectId: string, id: string): Promise<ExecutionSnapshot> {
     const exec = await this.prisma.testExecution.findFirst({
       where: { id, projectId },
-      select: { id: true },
+      select: {
+        id: true,
+        status: true,
+        artifacts: { orderBy: { capturedAt: "desc" } },
+      },
     });
     if (!exec) throw new NotFoundException("Execution not found");
-    return { executionId: id, events: this.snapshot.snapshot(id) };
+    return {
+      executionId: id,
+      status: exec.status as ExecutionStatus,
+      artifacts: exec.artifacts.map(this.toArtifactDto),
+      events: this.snapshot.snapshot(id),
+    };
   }
 
   /** WorkerGateway registers artifacts + updates status (R2 redelivery path). */
@@ -105,7 +116,7 @@ export class ExecutionsService {
         workerJobId: input.workerJobId,
         finishedAt: new Date(),
       },
-      include: { artifacts: true },
+      include: this.executionInclude,
     });
     if (["passed", "failed", "aborted", "timeout"].includes(input.status)) {
       this.snapshot.release(input.executionId);
@@ -152,6 +163,7 @@ export class ExecutionsService {
       failedStepId: string | null;
       reportSummary: unknown;
       workerJobId: string | null;
+      testCase?: { title: string };
     },
     artifacts: Array<{
       id: string;
@@ -169,6 +181,7 @@ export class ExecutionsService {
     id: e.id,
     projectId: e.projectId,
     testCaseId: e.testCaseId,
+    testCaseTitle: e.testCase?.title,
     createdBy: e.createdBy,
     environment: e.environment,
     status: e.status,

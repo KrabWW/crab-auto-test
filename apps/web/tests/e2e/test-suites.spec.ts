@@ -109,4 +109,5 @@ test("test suites: create, edit members, delete, run summary", async ({ page }) 
   await page.reload();
   await page.getByRole("button", { name: "Run suite", exact: true }).click();
   await expect(page.getByText(/3 executions/)).toBeVisible();
+  await expect(page.locator(`a[href^="/projects/${project.id}/executions/"]`).first()).toBeVisible();
 });

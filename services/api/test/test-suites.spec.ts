@@ -210,7 +210,11 @@ describe("execution project scoping", () => {
     await expect(svc.getSnapshot("project-a", "exec-b")).rejects.toBeInstanceOf(NotFoundException);
     expect(findFirst).toHaveBeenCalledWith({
       where: { id: "exec-b", projectId: "project-a" },
-      select: { id: true },
+      select: {
+        id: true,
+        status: true,
+        artifacts: { orderBy: { capturedAt: "desc" } },
+      },
     });
   });
 });
