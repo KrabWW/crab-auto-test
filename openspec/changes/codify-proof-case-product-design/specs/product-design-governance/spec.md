@@ -91,6 +91,15 @@ The system SHALL treat `docs/UI-COMPONENT-BASELINE.md` as the accepted component
 - **AND** it SHOULD use shadcn-vue, Tailwind, Radix primitives, and lucide as the default foundation.
 - **AND** it MUST NOT introduce a second full UI system without an explicit design revision.
 
+### Requirement: Product design checklists are required for page readiness
+The system SHALL treat `docs/PRODUCT-DESIGN-CHECKLISTS.md` as the page-design readiness checklist for Crab product surfaces.
+
+#### Scenario: Page design is reviewed
+- **WHEN** a page design is proposed or reviewed
+- **THEN** it MUST check UX, UI structure, visual design, component usage, content, interaction states, evidence trust, and development handoff.
+- **AND** the review SHOULD verify that the page distinguishes AI suggestion, human confirmation, system-collected evidence, evidence gaps, and final proof conclusion.
+- **AND** the page SHOULD NOT be considered ready if it only provides a visual mock without state, exception, evidence, and handoff details.
+
 ### Requirement: Execution and reports are evidence-first
 The system SHALL present execution results around proof step, business impact, evidence artifacts, and next action before exposing trace/log/network/source drill-down details.
 

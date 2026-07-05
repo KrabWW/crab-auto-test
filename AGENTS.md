@@ -233,6 +233,8 @@ NUXT_PORT=3001 pnpm --filter @crab/web dev              # 5. Web :3001 → 浏�
 - Knowledge is Source Trust Center. MCP is Server Governance Center. Skills are governed assets; AI Chat is a contextual invocation drawer.
 - Settings is Project Governance Settings: General, Members, Model Providers, Credentials, Audit, Danger Zone.
 - UI component baseline is recorded in `docs/UI-COMPONENT-BASELINE.md`: use shadcn-vue/Tailwind/Radix/lucide as the foundation, follow its module matrix, and do not add a second full UI system without an explicit design revision.
+- Product design checklists are recorded in `docs/PRODUCT-DESIGN-CHECKLISTS.md`: page design must pass UX, UI, visual, component, content, evidence-trust, and handoff checks before it is treated as ready.
+- Confirmed horizontal product-design standards are recorded in `docs/PRODUCT-DESIGN-HORIZONTAL-STANDARDS.zh-CN.md`; use it as the accepted v1 for visual, component, content, handoff, and review-checklist decisions.
 - Release gate is lightweight tiered evidence with final human pass/fail in phase 1. CI pipeline integration is future-facing and must not complicate current product design.
 - Local open-source reference products live at `D:\code\auto-test\crab-auto-test\.claude\reference-products\oss`.
 - Concrete reference-product page-structure mapping is recorded in `docs/REFERENCE-PRODUCT-PAGE-MAPPING.md`; future feature specs for API automation, UI execution evidence, reports, Knowledge, Skills, AI Chat, MCP, or Settings should consult it before proposing page structure.

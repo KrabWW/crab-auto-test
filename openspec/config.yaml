@@ -19,6 +19,8 @@ context: |
   Product design spine: Crab is a Proof Case workbench, not a flat testing toolbox. Default entry is Overview First. Proof Case detail follows Requirement -> State Transition -> Cases -> Automation -> Execution -> Evidence -> Report.
   Reference baseline: API automation code reference is Hoppscotch; Bruno is not retained. UI automation/trace reference is Playwright. Execution reporting reference is Allure. Knowledge/Skills/Chat references are Open WebUI and Dify. MCP references are modelcontextprotocol/servers and Cline. Settings/credentials reference is Supabase.
   UI component baseline: Use docs/UI-COMPONENT-BASELINE.md as the accepted module component matrix. The foundation is shadcn-vue + Tailwind + Radix/lucide; do not introduce a second full UI system without explicit design revision.
+  Product design checklists: Use docs/PRODUCT-DESIGN-CHECKLISTS.md before approving page design. Required checks cover UX, UI, visual design, components, content, evidence trust, and development handoff.
+  Confirmed horizontal standards: Use docs/PRODUCT-DESIGN-HORIZONTAL-STANDARDS.zh-CN.md as the accepted v1 for visual design, component rules, content style, handoff standards, and page review checklists.
   Release gate: Phase 1 uses a lightweight tiered evidence gate with final human pass/fail decision; future CI pipeline integration may consume the result but must not drive current design complexity.
 
 # Per-artifact rules (optional)

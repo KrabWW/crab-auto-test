@@ -6,6 +6,8 @@
 - Primary product surfaces: RJ Auto Test / Crab project workspace, Proof Case workbench, requirements, cases, automation, execution reports, knowledge, MCP, skills, settings.
 - P0 design brief: `docs/P0-PROOF-CASE-DESIGN-BRIEF.md`.
 - Reference product page mapping: `docs/REFERENCE-PRODUCT-PAGE-MAPPING.md`.
+- Product design checklists: `docs/PRODUCT-DESIGN-CHECKLISTS.md`.
+- Confirmed horizontal standards: `docs/PRODUCT-DESIGN-HORIZONTAL-STANDARDS.zh-CN.md`.
 - Evidence reviewed:
   - User product notes and reference-product matrix from Codex attachments.
   - Current workspace navigation in `apps/web/components/project/ProjectWorkspaceNav.vue`.
@@ -216,6 +218,7 @@ The product should treat these as first-class conceptual objects in design langu
 - Configuration is lower frequency: Knowledge, Skills, MCP, Model Providers, members, audit, and settings should not compete with daily test work.
 - Progressive disclosure: show the next decision first; reveal trace/log/assertion detail when the user investigates.
 - Do not clone reference products: copy proven interaction patterns only where they serve Proof Case.
+- Use the product design checklists before designing or approving a page: UX, UI, visual, component, content, evidence trust, and handoff must all be checked.
 
 ## Visual language
 - Color: restrained enterprise palette with strong status colors for proof, risk, pass/fail, warning, and blocked states. Avoid one-note purple/blue SaaS gradients.
