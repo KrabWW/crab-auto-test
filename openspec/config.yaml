@@ -16,6 +16,10 @@ context: |
   Backend path: NestJS + Fastify + Prisma + PostgreSQL + Redis/BullMQ.
   AI path: LangChain.js + LangGraph.js as the core orchestration layer, with MCP TypeScript SDK for tool integration and Playwright workers for automation execution.
   Governance: Read WHartTest to extract intent and behavior, then redesign and implement in crab-auto-test. Do not mechanically copy WHartTest source files, concrete UI expression, prompts, copy, or assets for the intent-migration path. The active rule is intent migration, not a clean-room ban on reading WHartTest.
+  Product design spine: Crab is a Proof Case workbench, not a flat testing toolbox. Default entry is Overview First. Proof Case detail follows Requirement -> State Transition -> Cases -> Automation -> Execution -> Evidence -> Report.
+  Reference baseline: API automation code reference is Hoppscotch; Bruno is not retained. UI automation/trace reference is Playwright. Execution reporting reference is Allure. Knowledge/Skills/Chat references are Open WebUI and Dify. MCP references are modelcontextprotocol/servers and Cline. Settings/credentials reference is Supabase.
+  UI component baseline: Use docs/UI-COMPONENT-BASELINE.md as the accepted module component matrix. The foundation is shadcn-vue + Tailwind + Radix/lucide; do not introduce a second full UI system without explicit design revision.
+  Release gate: Phase 1 uses a lightweight tiered evidence gate with final human pass/fail decision; future CI pipeline integration may consume the result but must not drive current design complexity.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

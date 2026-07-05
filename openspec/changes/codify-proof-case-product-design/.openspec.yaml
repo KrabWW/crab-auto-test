@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-07-05
+goal: Codify the Proof Case product-design decisions and open-source reference-product baseline so future implementation does not drift back into a flat testing toolbox.
