@@ -4,6 +4,18 @@ Status: validated on Windows with OpenPencil 0.13.2 installed at `D:\install\Ope
 
 Use OpenPencil as an editable prototype handoff target, not as the first design reasoning surface. First define the page structure from `DESIGN.md`, `docs/PRODUCT-DESIGN-CHECKLISTS.md`, and `docs/PRODUCT-DESIGN-HORIZONTAL-STANDARDS.zh-CN.md`; then generate an OpenPencil file.
 
+## Tool Boundary
+
+OpenPencil is a structure prototype and editable canvas tool. Do not treat it as the shadcn-vue component library or as the final high-fidelity UI source.
+
+Practical route:
+
+1. Use OpenPencil for layout, page regions, information hierarchy, and reviewable wireframes.
+2. Use shadcn/ui or shadcn-vue Figma kits as visual component references when high-fidelity polish is needed.
+3. Use the project's shadcn-vue + Tailwind components for final coded prototypes and implementation truth.
+
+Figma can bridge visual components into OpenPencil through `.fig` files, but that only carries design appearance and component structure. It does not carry Vue runtime behavior, reliable interaction states, full variants, or token fidelity.
+
 ## Recommended Path
 
 1. Write a focused page structure for one Crab surface, such as Proof Case detail or API workbench.

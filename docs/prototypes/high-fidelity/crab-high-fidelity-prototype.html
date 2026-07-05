@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crab Proof Case High-Fidelity Prototype</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --panel-2: #f1f5f9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --line-strong: #cbd5e1;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --purple: #7c3aed;
+      --purple-soft: #f5f3ff;
+      --green: #059669;
+      --green-soft: #ecfdf5;
+      --amber: #d97706;
+      --amber-soft: #fffbeb;
+      --red: #dc2626;
+      --red-soft: #fef2f2;
+      --slate: #0f172a;
+      --radius: 8px;
+      --shadow: 0 1px 2px rgb(15 23 42 / .06), 0 8px 30px rgb(15 23 42 / .05);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-size: 14px; }
+    button, input, select, textarea { font: inherit; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 244px 1fr; }
+    .sidebar { background: #101827; color: #cbd5e1; padding: 16px 12px; border-right: 1px solid #1e293b; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 8px 10px 18px; color: #fff; }
+    .mark { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #2563eb, #16a34a); display: grid; place-items: center; font-weight: 800; }
+    .brand strong { display: block; font-size: 14px; }
+    .brand span { color: #94a3b8; font-size: 12px; }
+    .nav-title { color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 12px 10px 6px; }
+    .nav-item { width: 100%; border: 0; color: #cbd5e1; background: transparent; border-radius: var(--radius); padding: 10px; text-align: left; display: flex; gap: 10px; align-items: center; cursor: pointer; }
+    .nav-item:hover { background: #1e293b; }
+    .nav-item.active { color: #fff; background: #1e293b; box-shadow: inset 3px 0 0 #60a5fa; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; flex: 0 0 auto; }
+    .active .dot { background: #60a5fa; }
+    .nav-note { margin: 16px 10px 0; padding: 12px; border: 1px solid #334155; border-radius: var(--radius); color: #94a3b8; font-size: 12px; line-height: 1.6; }
+
+    .main { min-width: 0; display: grid; grid-template-rows: 58px 1fr; }
+    .topbar { background: var(--panel); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 16px; padding: 0 24px; }
+    .crumb { color: var(--muted); font-size: 13px; }
+    .search { width: 360px; height: 34px; border: 1px solid var(--line); border-radius: var(--radius); background: #f8fafc; color: var(--muted); padding: 8px 12px; margin-left: auto; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; font-size: 12px; background: var(--panel); white-space: nowrap; }
+    .content { padding: 22px; overflow: auto; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .screen-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 16px; }
+    .kicker { color: var(--blue); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    h1 { margin: 4px 0 6px; font-size: 24px; line-height: 1.2; }
+    h2 { margin: 0; font-size: 16px; }
+    h3 { margin: 0; font-size: 14px; }
+    p { margin: 0; color: var(--muted); line-height: 1.55; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: var(--radius); height: 34px; padding: 0 12px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; }
+    .btn.primary { background: var(--blue); color: white; border-color: var(--blue); }
+    .btn.danger { background: var(--red); color: white; border-color: var(--red); }
+    .btn:hover { filter: brightness(.98); }
+    .grid { display: grid; gap: 16px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .workbench { grid-template-columns: 280px minmax(0, 1fr) 360px; align-items: start; }
+    .api-layout { grid-template-columns: 280px minmax(0, 1fr) 380px; grid-template-rows: minmax(0, 1fr) 220px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .panel.pad { padding: 16px; }
+    .panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .panel-body { padding: 16px; }
+    .metric { padding: 14px; }
+    .metric span { color: var(--muted); font-size: 12px; }
+    .metric strong { display: block; margin-top: 8px; font-size: 28px; letter-spacing: 0; }
+    .badge { display: inline-flex; align-items: center; height: 24px; border-radius: 999px; padding: 0 9px; font-size: 12px; font-weight: 700; border: 1px solid var(--line); background: var(--panel-2); color: #334155; white-space: nowrap; }
+    .badge.blue { color: #1d4ed8; background: var(--blue-soft); border-color: #bfdbfe; }
+    .badge.purple { color: #6d28d9; background: var(--purple-soft); border-color: #ddd6fe; }
+    .badge.green { color: #047857; background: var(--green-soft); border-color: #a7f3d0; }
+    .badge.amber { color: #92400e; background: var(--amber-soft); border-color: #fde68a; }
+    .badge.red { color: #b91c1c; background: var(--red-soft); border-color: #fecaca; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .table th { color: var(--muted); background: #f8fafc; font-size: 12px; font-weight: 700; }
+    .table td { font-size: 13px; }
+    .table tr.selected td { background: var(--amber-soft); }
+    .list { display: grid; gap: 8px; }
+    .row-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; background: var(--panel); display: flex; justify-content: space-between; gap: 12px; }
+    .row-card.active { border-color: #93c5fd; background: var(--blue-soft); }
+    .row-card strong { display: block; margin-bottom: 4px; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; background: #0f172a; color: #cbd5e1; border-radius: var(--radius); padding: 14px; line-height: 1.7; font-size: 12px; overflow: auto; }
+    .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); padding: 10px 12px 0; }
+    .tab { border: 1px solid transparent; border-bottom: 0; background: transparent; border-radius: 7px 7px 0 0; padding: 8px 10px; color: var(--muted); cursor: pointer; }
+    .tab.active { color: var(--text); border-color: var(--line); background: var(--panel); font-weight: 700; }
+    .stage { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .stage-num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: white; font-size: 12px; font-weight: 800; background: #94a3b8; }
+    .stage.done .stage-num { background: var(--green); }
+    .stage.current .stage-num { background: var(--amber); }
+    .stage.blocked .stage-num { background: var(--red); }
+    .state-flow { display: grid; grid-template-columns: 1fr 80px 1fr 80px 1fr; align-items: center; gap: 8px; margin-top: 12px; }
+    .state-node { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 12px; text-align: center; font-weight: 800; }
+    .arrow { text-align: center; color: var(--muted); font-size: 12px; }
+    .drawer { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .callout { border-radius: var(--radius); padding: 13px; border: 1px solid var(--line); background: #f8fafc; }
+    .callout.amber { color: #92400e; background: var(--amber-soft); border-color: #fde68a; }
+    .callout.red { color: #991b1b; background: var(--red-soft); border-color: #fecaca; }
+    .callout.purple { color: #4c1d95; background: var(--purple-soft); border-color: #ddd6fe; }
+    .split { display: grid; grid-template-columns: 250px 1fr; min-height: 620px; }
+    .settings-nav { border-right: 1px solid var(--line); padding: 14px; background: #f8fafc; }
+    .settings-tab { width: 100%; text-align: left; border: 0; background: transparent; border-radius: var(--radius); padding: 10px 12px; cursor: pointer; color: #334155; display: flex; justify-content: space-between; gap: 8px; }
+    .settings-tab.active { background: var(--panel); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow); font-weight: 700; }
+    .settings-page { display: none; padding: 18px; }
+    .settings-page.active { display: block; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .field label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #334155; }
+    .field input, .field select, .field textarea { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 9px 10px; color: var(--text); }
+    .field textarea { min-height: 90px; resize: vertical; }
+    .timeline { position: relative; display: grid; gap: 10px; }
+    .timeline-item { display: grid; grid-template-columns: 90px 1fr; gap: 12px; align-items: start; }
+    .artifact { border: 1px solid var(--line); border-radius: var(--radius); background: #f8fafc; min-height: 96px; padding: 12px; }
+    .mini-browser { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: white; }
+    .mini-browser .bar { height: 28px; background: #e2e8f0; display: flex; align-items: center; gap: 6px; padding: 0 10px; }
+    .mini-browser .circle { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+    .mini-browser .page { padding: 18px; min-height: 150px; }
+    .component-map { grid-template-columns: 1fr 1fr; }
+    a { color: var(--blue); text-decoration: none; }
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: sticky; top: 0; z-index: 5; display: flex; overflow: auto; gap: 6px; padding: 8px; }
+      .brand, .nav-title, .nav-note { display: none; }
+      .nav-item { width: auto; white-space: nowrap; }
+      .workbench, .api-layout, .cols-2, .cols-3, .cols-4, .component-map { grid-template-columns: 1fr; }
+      .main { grid-template-rows: auto 1fr; }
+      .topbar { flex-wrap: wrap; height: auto; padding: 12px; }
+      .search { width: 100%; margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">C</div>
+        <div><strong>Crab Auto Test</strong><span>Proof Case Workbench</span></div>
+      </div>
+      <div class="nav-title">Product Primary</div>
+      <button class="nav-item active" data-screen="workbench"><span class="dot"></span>Workbench</button>
+      <button class="nav-item" data-screen="proof"><span class="dot"></span>Verification Tasks</button>
+      <button class="nav-item" data-screen="asset"><span class="dot"></span>Asset Library</button>
+      <button class="nav-item" data-screen="system"><span class="dot"></span>System Context</button>
+      <button class="nav-item" data-screen="settings"><span class="dot"></span>Settings</button>
+      <div class="nav-note">一级导航只保留产品主路径。API、Execution、Knowledge、AI Chat / Skills、MCP 和组件规范从工作流页面二级进入。</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <strong>支付中台</strong>
+          <div class="crumb">Staging / Release 2026.07.06 / PC-071</div>
+        </div>
+        <input class="search" value="搜索 Proof Case、状态流转、证据、MCP 调用..." />
+        <span class="status-pill"><span class="dot" style="background:var(--red)"></span>2 blocking</span>
+        <span class="status-pill"><span class="dot" style="background:var(--amber)"></span>4 approvals</span>
+        <button class="btn primary">Run Proof</button>
+      </header>
+
+      <div class="content">
+        <section id="workbench" class="screen active">
+          <div class="screen-head">
+            <div>
+              <div class="kicker">Overview first</div>
+              <h1>Proof Operations Workbench</h1>
+              <p>首页只做两件事：把用户带到下一步动作，把发布风险暴露出来。</p>
+            </div>
+            <div class="actions"><button class="btn">New Proof Case</button><button class="btn primary">Review Gate</button></div>
+          </div>
+          <div class="grid cols-4">
+            <div class="panel metric"><span>Ready for report</span><strong style="color:var(--green)">12</strong><p>已形成证据矩阵</p></div>
+            <div class="panel metric"><span>Blocked</span><strong style="color:var(--red)">2</strong><p>发布前必须处理</p></div>
+            <div class="panel metric"><span>Evidence completeness</span><strong style="color:var(--blue)">78%</strong><p>DB 证据缺口集中</p></div>
+            <div class="panel metric"><span>AI drafts</span><strong style="color:var(--purple)">4</strong><p>等待人工确认</p></div>
+          </div>
+          <div class="grid workbench" style="margin-top:16px">
+            <div class="panel">
+              <div class="panel-head"><div><h2>My To-dos</h2><p>人工确认优先</p></div><span class="badge amber">4 pending</span></div>
+              <div class="panel-body list">
+                <div class="row-card active"><div><strong>会员状态启用</strong><span class="muted">确认状态流转 / 高风险</span></div><span class="badge amber">Confirm</span></div>
+                <div class="row-card"><div><strong>退款审批链路</strong><span class="muted">补证据点 / 阻塞</span></div><span class="badge red">Blocked</span></div>
+                <div class="row-card"><div><strong>发票开具规则</strong><span class="muted">审 AI 草稿 / 中风险</span></div><span class="badge purple">AI Draft</span></div>
+                <div class="row-card"><div><strong>营销券冻结</strong><span class="muted">报告确认 / 低风险</span></div><span class="badge green">Ready</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><div><h2>Release Gate Queue</h2><p>不是通过率表，是发布判断队列。</p></div><span class="badge red">No blind pass</span></div>
+              <table class="table">
+                <thead><tr><th>Proof Case</th><th>Decision</th><th>Evidence gap</th><th>Next action</th><th>Owner</th></tr></thead>
+                <tbody>
+                  <tr class="selected"><td>会员状态启用</td><td><span class="badge amber">Needs Review</span></td><td>DB snapshot</td><td>补数据层验证</td><td>QA Lead</td></tr>
+                  <tr><td>退款审批链路</td><td><span class="badge red">No Ship</span></td><td>API response conflict</td><td>开发修复后重跑</td><td>Dev</td></tr>
+                  <tr><td>发票开具规则</td><td><span class="badge green">Go</span></td><td>无</td><td>生成报告</td><td>Release</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="drawer">
+              <div class="panel-head"><div><h2>Context AI</h2><p>随当前页面带上下文</p></div><span class="badge purple">Drawer</span></div>
+              <div class="panel-body grid">
+                <div class="callout purple"><strong>AI 建议</strong><p>会员状态启用缺少 DB 状态证据。建议添加 read-only database evidence step。</p></div>
+                <div class="callout"><strong>Sources</strong><p>PRD 3.2、API /member/enable、历史用例 PC-128。每条输出都能查看来源与确认记录。</p></div>
+                <div class="callout"><strong>Tool Call Preview</strong><p>database.read_state / 只读 / 需批准 / 绑定 Disabled -> Enabled。</p></div>
+              </div>
+            </div>
+            <div class="panel pad" style="grid-column:1/-1">
+              <div class="panel-head"><div><h2>Stage Drill-downs</h2><p>这些是 Proof Case 工作流里的二级评审页，不是一级菜单。</p></div><span class="badge blue">review surfaces</span></div>
+              <div class="actions" style="margin-top:14px; flex-wrap:wrap">
+                <button class="btn" data-review-screen="api">API Automation</button>
+                <button class="btn" data-review-screen="execution">Execution Evidence / Report</button>
+                <button class="btn" data-review-screen="components">Component System</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="proof" class="screen">
+          <div class="screen-head">
+            <div><div class="kicker">Lifecycle Proof Workspace</div><h1>会员状态启用 Proof Case</h1><p>第一屏先回答：哪里阻塞、需要谁确认、下一步做什么。</p></div>
+            <div class="actions"><button class="btn">Reject AI Draft</button><button class="btn primary">Confirm Transition</button></div>
+          </div>
+          <div class="grid workbench">
+            <div class="panel pad">
+              <h2>Lifecycle</h2>
+              <div class="stage done"><div class="stage-num">1</div><div><strong>Requirement</strong><p>Human confirmed</p></div></div>
+              <div class="stage current"><div class="stage-num">2</div><div><strong>State Transition</strong><p>Needs confirmation</p></div></div>
+              <div class="stage"><div class="stage-num">3</div><div><strong>Cases & Evidence</strong><p>AI draft</p></div></div>
+              <div class="stage blocked"><div class="stage-num">4</div><div><strong>Execution Evidence</strong><p>DB evidence missing</p></div></div>
+              <div class="stage"><div class="stage-num">5</div><div><strong>Report</strong><p>Not ready</p></div></div>
+            </div>
+            <div class="grid">
+              <div class="callout amber"><strong>Next action</strong><p>确认 Disabled -> Enabled 是否是真实业务状态流转，并指定权威证据字段。AI 推断不能直接进入报告。</p></div>
+              <div class="panel pad">
+                <h2>State Transition Graph</h2>
+                <div class="state-flow">
+                  <div class="state-node">Disabled</div><div class="arrow">enable()</div><div class="state-node" style="background:var(--green-soft);border-color:#a7f3d0;color:#047857">Enabled</div><div class="arrow">audit</div><div class="state-node" style="background:var(--blue-soft);border-color:#bfdbfe;color:#1d4ed8">Audit Created</div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-head"><h2>State Transition Confirmation Table</h2><span class="badge amber">Working view</span></div>
+                <table class="table">
+                  <thead><tr><th>Object</th><th>Initial</th><th>Trigger</th><th>Target</th><th>Evidence point</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr class="selected"><td>Member</td><td>Disabled</td><td>enable</td><td>Enabled</td><td>UI badge + API + DB</td><td><span class="badge amber">Pending</span></td></tr>
+                    <tr><td>Audit</td><td>None</td><td>enable</td><td>Created</td><td>audit log entry</td><td><span class="badge green">Confirmed</span></td></tr>
+                    <tr><td>Cache</td><td>stale</td><td>refresh</td><td>current</td><td>response timestamp</td><td><span class="badge">Skipped with reason</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="panel">
+                <div class="panel-head"><h2>Evidence Matrix Preview</h2><span class="badge red">DB gap</span></div>
+                <table class="table">
+                  <thead><tr><th>State transition</th><th>UI</th><th>API</th><th>DB</th><th>Log</th><th>Conclusion</th></tr></thead>
+                  <tbody>
+                    <tr class="selected"><td>Disabled -> Enabled</td><td>Valid</td><td>Valid</td><td>Missing</td><td>Valid</td><td><span class="badge amber">Needs Review</span></td></tr>
+                    <tr><td>None -> Audit Created</td><td>-</td><td>Valid</td><td>-</td><td>Valid</td><td><span class="badge green">Proved</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="drawer">
+              <div class="panel-head"><h2>AI / Source / Approval</h2><span class="badge purple">Inspectable</span></div>
+              <div class="panel-body grid">
+                <div class="callout purple"><strong>AI Draft</strong><p>AI 根据 PRD 和 API 文档推断 enabled 字段是权威状态。必须人工确认。</p></div>
+                <div class="callout"><strong>Human confirmation</strong><p>业务对象已确认；权威状态字段、DB 证据必要性、缓存误判仍待确认。</p></div>
+                <div class="callout red"><strong>Why not pass-rate</strong><p>UI 显示 Enabled 不等于业务状态已落库。Proof Case 必须证明真实状态成立。</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="api" class="screen">
+          <div class="screen-head">
+            <div><div class="kicker">Hoppscotch pattern, Crab evidence binding</div><h1>API Automation Workbench</h1><p>迁移左集合树、中请求编辑、右响应证据、底部 Runner；不做通用 API 客户端。</p></div>
+            <div class="actions"><button class="btn">Import cURL</button><button class="btn primary">Send</button></div>
+          </div>
+          <div class="grid api-layout">
+            <div class="panel pad">
+              <h2>Scenario Tree</h2>
+              <div class="list" style="margin-top:12px">
+                <div class="row-card active"><div><strong>会员状态启用</strong><span class="muted">POST /member/enable</span></div><span class="badge blue">PC-071</span></div>
+                <div class="row-card"><div><strong>读取会员详情</strong><span class="muted">GET /member/{id}</span></div></div>
+                <div class="row-card"><div><strong>读取审计事件</strong><span class="muted">GET /audit/events</span></div></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><div><h2>Request Editor</h2><p>绑定 Disabled -> Enabled / API evidence</p></div><span class="badge green">POST</span></div>
+              <div class="panel-body">
+                <div class="field"><input value="{{baseUrl}}/member/{{memberId}}/enable" /></div>
+                <div class="tabs"><button class="tab">Params</button><button class="tab">Headers</button><button class="tab active">Body</button><button class="tab">Assertions</button><button class="tab">Extraction</button><button class="tab">Evidence Binding</button></div>
+                <pre class="code">{
+  "operator": "{{qaUser}}",
+  "reason": "release verification",
+  "expectedState": "Enabled"
+}</pre>
+                <table class="table" style="margin-top:14px">
+                  <thead><tr><th>Assertion</th><th>Source</th><th>Evidence binding</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>json.enabled == true</td><td>response</td><td>API evidence</td><td><span class="badge green">Pass</span></td></tr>
+                    <tr><td>extract member.version</td><td>response</td><td>DB follow-up</td><td><span class="badge blue">Extracted</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><div><h2>Response / Evidence</h2><p>184ms / 2.1KB / staging</p></div><span class="badge green">200 OK</span></div>
+              <div class="panel-body grid">
+                <pre class="code">{
+  "memberId": "M-10086",
+  "enabled": true,
+  "version": 42,
+  "auditId": "A-2291"
+}</pre>
+                <div class="callout amber"><strong>Evidence Binding Inspector</strong><p>已满足：API response enabled=true；未满足：DB enabled snapshot；报告影响：Needs Review。</p></div>
+              </div>
+            </div>
+            <div class="panel" style="grid-column:2 / span 2">
+              <div class="panel-head"><h2>Runner / Logs / History</h2><span class="badge red">1 blocking row</span></div>
+              <table class="table">
+                <thead><tr><th>Step</th><th>Result</th><th>Evidence</th><th>Duration</th><th>Report impact</th></tr></thead>
+                <tbody>
+                  <tr><td>POST enable member</td><td>passed</td><td>API response</td><td>184ms</td><td>supports transition</td></tr>
+                  <tr class="selected"><td>DB enabled snapshot</td><td>missing</td><td>state evidence</td><td>-</td><td>blocks report</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="execution" class="screen">
+          <div class="screen-head"><div><div class="kicker">Playwright + Allure patterns</div><h1>Execution Evidence & Proof Report</h1><p>失败定位像 Trace Viewer，报告消费像 Allure，但第一心智是发布判断。</p></div><div class="actions"><button class="btn">Open Trace</button><button class="btn primary">Generate Report</button></div></div>
+          <div class="grid cols-2">
+            <div class="panel pad">
+              <div class="callout red"><strong>Failed proof step selected</strong><p>DB enabled snapshot 未采集，默认选中断点并联动截图、网络、日志、source。</p></div>
+              <div class="grid" style="grid-template-columns:210px 1fr;margin-top:16px">
+                <div class="panel pad" style="box-shadow:none">
+                  <h2>Action timeline</h2>
+                  <div class="timeline" style="margin-top:12px">
+                    <div class="timeline-item"><span class="badge green">pass</span><span>login as QA</span></div>
+                    <div class="timeline-item"><span class="badge green">pass</span><span>click Enable</span></div>
+                    <div class="timeline-item"><span class="badge green">pass</span><span>API enabled=true</span></div>
+                    <div class="timeline-item"><span class="badge red">fail</span><span>DB enabled snapshot</span></div>
+                  </div>
+                </div>
+                <div class="mini-browser">
+                  <div class="bar"><span class="circle"></span><span class="circle"></span><span class="circle"></span><span class="muted">staging/member/M-10086</span></div>
+                  <div class="page"><h2>Member Status</h2><div class="badge green" style="margin-top:18px">Enabled</div><p style="margin-top:18px">UI 证据成立，但 DB 状态未采集。</p></div>
+                </div>
+              </div>
+              <div class="tabs" style="margin-top:16px"><button class="tab active">Log</button><button class="tab">Errors</button><button class="tab">Console</button><button class="tab">Network</button><button class="tab">Source</button><button class="tab">Attachments</button></div>
+              <pre class="code">[04] API assertion passed: response.enabled == true
+[05] DB state evidence skipped: no configured read-only connection
+[gate] Evidence Matrix row marked Needs Review</pre>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><div><h2>Proof Report</h2><p>第一屏回答 ship/no-ship、为什么、剩余风险、谁确认。</p></div><span class="badge amber">Needs Review</span></div>
+              <div class="panel-body grid">
+                <div class="callout amber"><strong>Decision: Needs Review</strong><p>不能直接发布：高风险状态流转缺少 DB 层证据。Release Owner 待确认。</p></div>
+                <table class="table">
+                  <thead><tr><th>State transition</th><th>Evidence</th><th>Risk</th><th>Conclusion</th></tr></thead>
+                  <tbody>
+                    <tr class="selected"><td>Disabled -> Enabled</td><td>UI/API/Log, DB missing</td><td>High</td><td>Needs Review</td></tr>
+                    <tr><td>None -> Audit Created</td><td>API/Log</td><td>Medium</td><td>Proved</td></tr>
+                  </tbody>
+                </table>
+                <div class="grid cols-3">
+                  <div class="artifact"><strong>Screenshot</strong><p>enabled badge</p></div>
+                  <div class="artifact"><strong>HTTP exchange</strong><p>POST enable</p></div>
+                  <div class="artifact"><strong>Trace</strong><p>Playwright trace.zip</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="asset" class="screen">
+          <div class="screen-head"><div><div class="kicker">Reuse recommendation first</div><h1>Asset Library</h1><p>资产库不是被动归档，而是在新 Proof Case 创建和复盘时推荐可复用验证资产。</p></div><div class="actions"><button class="btn">Package Current Proof</button><button class="btn primary">Use Similar Asset</button></div></div>
+          <div class="grid cols-3">
+            <div class="panel">
+              <div class="panel-head"><h2>Recommended Assets</h2><span class="badge blue">during creation</span></div>
+              <div class="panel-body list">
+                <div class="row-card active"><div><strong>会员启用验证包</strong><span class="muted">fit scope 86% / latest run passed</span></div><span class="badge green">Recommended</span></div>
+                <div class="row-card"><div><strong>审计日志验证包</strong><span class="muted">fit scope 72% / maintained by QA</span></div><span class="badge blue">Reusable</span></div>
+                <div class="row-card"><div><strong>账号权限准备包</strong><span class="muted">fit scope 64% / needs update</span></div><span class="badge amber">Review</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Asset Package Detail</h2><span class="badge green">trusted fields</span></div>
+              <table class="table">
+                <tbody>
+                  <tr><th>Fit scope</th><td>会员状态从 disabled 到 enabled 的业务验证</td></tr>
+                  <tr><th>Latest run</th><td><span class="badge green">passed</span> 2026-07-05 / staging</td></tr>
+                  <tr><th>Maintainer</th><td>QA Lead</td></tr>
+                  <tr><th>Reusable parts</th><td>状态流转表、API scenario、断言、报告模板</td></tr>
+                  <tr><th>Known limits</th><td>DB 字段映射需要按项目确认</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="drawer">
+              <div class="panel-head"><h2>Reuse Inspector</h2><span class="badge purple">AI assisted</span></div>
+              <div class="panel-body grid">
+                <div class="callout purple"><strong>AI recommendation</strong><p>当前需求与历史资产 PC-128 的状态流转和证据结构相似，可复用 3 个 API steps。</p></div>
+                <div class="callout"><strong>Human confirmation</strong><p>复用前确认：业务对象、状态字段、权限账号、环境变量、证据点。</p></div>
+                <div class="callout amber"><strong>Do not overbuild</strong><p>P0 不做资产市场和复杂评分；只展示 fit scope、latest run、maintainer。</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="system" class="screen">
+          <div class="screen-head"><div><div class="kicker">Evidence collection context</div><h1>System Context</h1><p>System Context 只描述被测系统和证据采集上下文；成员、凭据、模型、审计、危险操作仍属于 Settings。</p></div><div class="actions"><button class="btn">Add Context Entry</button><button class="btn primary">Map State Field</button></div></div>
+          <div class="grid cols-3">
+            <div class="panel">
+              <div class="panel-head"><h2>Tested System</h2><span class="badge blue">context</span></div>
+              <table class="table">
+                <tbody>
+                  <tr><th>System</th><td>会员中心</td></tr>
+                  <tr><th>Environment</th><td>Staging</td></tr>
+                  <tr><th>Entry pages</th><td>/members/:id, /audit/events</td></tr>
+                  <tr><th>API sources</th><td>OpenAPI member-service.yaml</td></tr>
+                  <tr><th>Accounts</th><td>QA operator / readonly auditor</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>State Field Mapping</h2><span class="badge amber">must confirm</span></div>
+              <table class="table">
+                <thead><tr><th>Business object</th><th>UI state</th><th>API field</th><th>DB field</th></tr></thead>
+                <tbody>
+                  <tr class="selected"><td>Member</td><td>Status badge</td><td>enabled</td><td>member.enabled</td></tr>
+                  <tr><td>Audit</td><td>Audit row</td><td>auditId</td><td>audit.event_id</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="drawer">
+              <div class="panel-head"><h2>Collection Methods</h2><span class="badge green">visible status</span></div>
+              <div class="panel-body grid">
+                <div class="callout"><strong>UI evidence</strong><p>Playwright local worker / screenshot + trace。</p></div>
+                <div class="callout"><strong>API evidence</strong><p>HTTP request/response + assertions + extraction。</p></div>
+                <div class="callout amber"><strong>DB/log evidence</strong><p>read-only entries visible as placeholders/status cards until full integration is ready。</p></div>
+              </div>
+            </div>
+            <div class="panel pad" style="grid-column:1/-1">
+              <div class="panel-head"><div><h2>Context Governance Drill-downs</h2><p>Knowledge、AI Chat / Skills、MCP 都是上下文与治理能力，在这里二级进入。</p></div><span class="badge purple">not primary nav</span></div>
+              <div class="actions" style="margin-top:14px; flex-wrap:wrap">
+                <button class="btn" data-review-screen="knowledge">Knowledge Source Trust</button>
+                <button class="btn" data-review-screen="ai">AI Chat / Skills</button>
+                <button class="btn" data-review-screen="mcp">MCP Governance</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="knowledge" class="screen">
+          <div class="screen-head"><div><div class="kicker">Dify + Open WebUI pattern</div><h1>Knowledge Source Trust Center</h1><p>Knowledge 不是文件上传页，而是可验证来源、索引状态、检索测试、引用预览和使用记录。</p></div><div class="actions"><button class="btn">Add Source</button><button class="btn primary">Run Retrieval Test</button></div></div>
+          <div class="grid workbench">
+            <div class="panel">
+              <div class="panel-head"><h2>Sources</h2><span class="badge blue">project scoped</span></div>
+              <div class="panel-body list">
+                <div class="row-card active"><div><strong>PRD 会员启用 v3</strong><span class="muted">ready / fresh / owner PM</span></div><span class="badge green">Ready</span></div>
+                <div class="row-card"><div><strong>API 文档</strong><span class="muted">stale / used by assertions</span></div><span class="badge amber">Stale</span></div>
+                <div class="row-card"><div><strong>历史 Proof Cases</strong><span class="muted">ready / 24 cases</span></div><span class="badge green">Ready</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="tabs"><button class="tab active">Documents</button><button class="tab">Indexing</button><button class="tab">Retrieval Test</button><button class="tab">Citations</button><button class="tab">Usage</button></div>
+              <div class="panel-body">
+                <table class="table">
+                  <thead><tr><th>Document</th><th>Status</th><th>Chunks</th><th>Freshness</th><th>Linked Proof Case</th></tr></thead>
+                  <tbody>
+                    <tr><td>prd-member-enable.md</td><td><span class="badge green">indexed</span></td><td>18</td><td>fresh</td><td>PC-071</td></tr>
+                    <tr class="selected"><td>member-api-openapi.yaml</td><td><span class="badge amber">stale</span></td><td>42</td><td>3 days</td><td>Assertions</td></tr>
+                  </tbody>
+                </table>
+                <div class="callout" style="margin-top:14px"><strong>Retrieval test</strong><p>Query: “启用会员后权威状态字段是什么？” 返回 PRD 3.2 与 API response.enabled；需要确认 DB 字段映射。</p></div>
+              </div>
+            </div>
+            <div class="drawer">
+              <div class="panel-head"><h2>Citation Preview</h2><span class="badge purple">Inspectable RAG</span></div>
+              <div class="panel-body grid">
+                <div class="callout"><strong>Chunk #12 / PRD 3.2</strong><p>会员启用后，业务状态从 disabled 变为 enabled，审计事件必须记录操作人。</p></div>
+                <div class="callout amber"><strong>Quality warning</strong><p>API 文档 3 天未更新。AI 输出需提示可能过期。</p></div>
+                <div class="callout"><strong>Usage trail</strong><p>Used by: AI Draft PC-071, Assertion Suggestion, Report explanation.</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="ai" class="screen">
+          <div class="screen-head"><div><div class="kicker">Open WebUI workspace separation</div><h1>AI Chat / Skills</h1><p>Skills 是可治理能力资产，Chat 是带当前页面上下文的调用入口。</p></div><div class="actions"><button class="btn">Install Skill</button><button class="btn primary">Open Assistant</button></div></div>
+          <div class="grid cols-2">
+            <div class="panel">
+              <div class="panel-head"><h2>Skill Asset Library</h2><span class="badge purple">Assets, not chats</span></div>
+              <table class="table">
+                <thead><tr><th>Skill</th><th>Context</th><th>Sources</th><th>MCP tools</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr class="selected"><td>状态流转识别</td><td>Requirement</td><td>PRD/API</td><td>none</td><td><span class="badge green">enabled</span></td></tr>
+                  <tr><td>失败分析</td><td>Execution</td><td>logs/trace</td><td>read-only db</td><td><span class="badge green">enabled</span></td></tr>
+                  <tr><td>报告结论草拟</td><td>Report</td><td>Evidence Matrix</td><td>none</td><td><span class="badge amber">review</span></td></tr>
+                </tbody>
+              </table>
+              <div class="panel-body">
+                <div class="callout"><strong>Skill inspector</strong><p>展示 instruction preview、版本、owner、绑定 Knowledge、允许 MCP、调用历史、回滚目标。</p></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Contextual AI Assistant</h2><span class="badge blue">Drawer model</span></div>
+              <div class="panel-body grid">
+                <div class="callout"><strong>Active context</strong><p>Proof Case PC-071 / State Transition / selected evidence row: DB missing。</p></div>
+                <div class="row-card"><div><strong>User</strong><span class="muted">为什么不能直接过？</span></div></div>
+                <div class="row-card active"><div><strong>Assistant</strong><span class="muted">因为 UI/API/Log 成立，但高风险状态流转缺少 DB 权威状态证据。建议补 read-only DB evidence step。</span></div><span class="badge purple">uses Skill</span></div>
+                <div class="callout purple"><strong>Output controls</strong><p>Accept / Edit / Reject / Regenerate / View sources / Mark error reason。</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="mcp" class="screen">
+          <div class="screen-head"><div><div class="kicker">MCP project governance</div><h1>MCP Governance Center</h1><p>Server Cards -> Tool List -> Permission -> Invocation Logs；项目级，不做全局工具和全局审批角色。</p></div><div class="actions"><button class="btn">Add Server</button><button class="btn primary">Review Allowlist</button></div></div>
+          <div class="grid workbench">
+            <div class="panel">
+              <div class="panel-head"><h2>Servers</h2><span class="badge blue">project only</span></div>
+              <div class="panel-body list">
+                <div class="row-card active"><div><strong>playwright</strong><span class="muted">online / 8 tools / trusted</span></div><span class="badge green">online</span></div>
+                <div class="row-card"><div><strong>db-readonly</strong><span class="muted">online / 3 tools / confirm read</span></div><span class="badge amber">review</span></div>
+                <div class="row-card"><div><strong>github</strong><span class="muted">disabled / pending owner</span></div><span class="badge">off</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="tabs"><button class="tab active">Tools</button><button class="tab">Resources</button><button class="tab">Prompts</button><button class="tab">Permissions</button><button class="tab">Invocation Logs</button></div>
+              <div class="panel-body">
+                <table class="table">
+                  <thead><tr><th>Tool</th><th>Risk</th><th>Approval</th><th>Used by</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>browser.snapshot</td><td>low</td><td>auto read</td><td>Execution evidence</td><td><span class="badge green">allowed</span></td></tr>
+                    <tr class="selected"><td>database.read_state</td><td>medium</td><td>confirm per Proof Case</td><td>PC-071</td><td><span class="badge amber">pending</span></td></tr>
+                    <tr><td>github.create_issue</td><td>write</td><td>owner approval</td><td>Failure follow-up</td><td><span class="badge">disabled</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="drawer">
+              <div class="panel-head"><h2>Permission Inspector</h2><span class="badge red">No hidden calls</span></div>
+              <div class="panel-body grid">
+                <div class="callout"><strong>Scope</strong><p>Project: 支付中台 / Environment: Staging / Proof Case: PC-071。</p></div>
+                <div class="callout amber"><strong>Approval reason</strong><p>AI 请求读取 member.enabled 字段以补足证据矩阵。只读，无写操作。</p></div>
+                <div class="callout"><strong>Invocation log</strong><p>time, server, tool, caller page, input redacted, output summary, status, duration, linked Proof Case。</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="settings" class="screen">
+          <div class="screen-head"><div><div class="kicker">Project Governance Settings</div><h1>Settings</h1><p>低频治理入口。顶层只保留 General、Members、Model Providers、Credentials、Audit、Danger Zone；环境变量和使用范围作为对应治理页的子区块。</p></div><div class="actions"><button class="btn">View Audit</button><button class="btn primary">Save Changes</button></div></div>
+          <div class="panel split">
+            <div class="settings-nav">
+              <button class="settings-tab active" data-settings="general">General <span class="badge">scope</span></button>
+              <button class="settings-tab" data-settings="members">Members <span class="badge">simple roles</span></button>
+              <button class="settings-tab" data-settings="providers">Model Providers <span class="badge blue">AI</span></button>
+              <button class="settings-tab" data-settings="credentials">Credentials <span class="badge amber">secret</span></button>
+              <button class="settings-tab" data-settings="audit">Audit <span class="badge">trail</span></button>
+              <button class="settings-tab" data-settings="danger">Danger Zone <span class="badge red">risk</span></button>
+            </div>
+            <div>
+              <div id="set-general" class="settings-page active">
+                <h2>General</h2><p>项目身份、默认环境、发布门禁策略。不要把所有治理能力平铺到一个一级页面。</p>
+                <div class="form-grid" style="margin-top:16px">
+                  <div class="field"><label>Project name</label><input value="支付中台" /></div>
+                  <div class="field"><label>Default environment</label><select><option>Staging</option><option>Production</option></select></div>
+                  <div class="field"><label>Release gate mode</label><select><option>Human final pass/fail</option></select></div>
+                  <div class="field"><label>Proof language</label><select><option>中文 UI / English object names</option></select></div>
+                </div>
+                <div class="grid cols-3" style="margin-top:16px">
+                  <div class="callout"><strong>MCP permissions summary</strong><p>详细审批和 allowlist 在 MCP Governance；Settings 只展示项目级风险摘要。</p></div>
+                  <div class="callout"><strong>Knowledge usage summary</strong><p>详细来源、检索测试和引用在 Knowledge；Settings 只展示默认可用范围。</p></div>
+                  <div class="callout"><strong>Skill enablement summary</strong><p>详细启用范围在 Skills；Settings 只展示依赖模型与凭据风险。</p></div>
+                </div>
+              </div>
+              <div id="set-members" class="settings-page">
+                <h2>Members</h2><p>阶段一只保留 owner/member 简单角色，不做企业级复杂 RBAC。</p>
+                <table class="table" style="margin-top:16px"><thead><tr><th>Name</th><th>Role</th><th>Can approve</th><th>Last active</th></tr></thead><tbody><tr><td>QA Lead</td><td>owner</td><td>release gate, credentials, MCP allowlist</td><td>today</td></tr><tr><td>Developer</td><td>member</td><td>execution evidence comments</td><td>yesterday</td></tr></tbody></table>
+              </div>
+              <div id="set-providers" class="settings-page">
+                <h2>Model Providers</h2><p>显示 provider、model family、capability、environment scope、credential reference、fallback、health。</p>
+                <table class="table" style="margin-top:16px"><thead><tr><th>Provider</th><th>Capability</th><th>Environment</th><th>Credential</th><th>Health</th><th>Used by</th></tr></thead><tbody><tr><td>OpenAI</td><td>chat + structured output</td><td>staging</td><td>cred-openai-prod</td><td><span class="badge green">valid</span></td><td>Requirement, Report, Chat</td></tr><tr><td>Qwen</td><td>embedding</td><td>staging</td><td>cred-qwen-embed</td><td><span class="badge amber">degraded</span></td><td>Knowledge retrieval</td></tr></tbody></table>
+              </div>
+              <div id="set-credentials" class="settings-page">
+                <h2>Credentials</h2><p>按环境和暴露等级治理：publishable、server-only secret、service-role/admin、external API token、MCP credential、model provider credential。</p>
+                <table class="table" style="margin-top:16px"><thead><tr><th>Name</th><th>Type</th><th>Env</th><th>Exposure</th><th>Used by</th><th>Status</th></tr></thead><tbody><tr><td>OPENAI_API_KEY</td><td>model provider</td><td>staging</td><td>server-only</td><td>Chat, Skills</td><td><span class="badge green">masked</span></td></tr><tr class="selected"><td>DB_READONLY_URL</td><td>MCP credential</td><td>staging</td><td>server-only</td><td>database.read_state</td><td><span class="badge amber">needs rotation</span></td></tr></tbody></table>
+                <h3 style="margin-top:18px">Environment variables</h3>
+                <p>参考 Vercel 的项目级环境变量治理：按 local/test/staging/production 分组，展示作用域和最后修改；作为 Credentials 的子区块，不做 Settings 顶层组。</p>
+                <table class="table" style="margin-top:16px"><thead><tr><th>Key</th><th>Environment</th><th>Scope</th><th>Last changed</th><th>Used by</th></tr></thead><tbody><tr><td>BASE_URL</td><td>staging</td><td>API automation</td><td>QA Lead</td><td>API scenarios</td></tr><tr><td>QA_USER</td><td>staging</td><td>execution</td><td>Owner</td><td>UI/API checks</td></tr></tbody></table>
+              </div>
+              <div id="set-audit" class="settings-page">
+                <h2>Audit</h2><p>记录设置变更、凭据轮换、模型供应商变更、MCP 权限、成员角色、AI 审批、报告门禁。</p>
+                <table class="table" style="margin-top:16px"><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Object</th><th>Result</th></tr></thead><tbody><tr><td>09:42</td><td>QA Lead</td><td>approved MCP tool</td><td>database.read_state</td><td>allowlisted</td></tr><tr><td>09:21</td><td>Owner</td><td>rotated credential</td><td>DB_READONLY_URL</td><td>masked</td></tr></tbody></table>
+                <div class="grid cols-3" style="margin-top:16px">
+                  <div class="callout"><strong>MCP permission changes</strong><p>approve / revoke / test-call / tool-call metadata all audit-linked。</p></div>
+                  <div class="callout"><strong>Knowledge usage changes</strong><p>source scope, stale-state override, retrieval-test evidence are traceable。</p></div>
+                  <div class="callout"><strong>Skill enablement changes</strong><p>enable / disable / permission approval / invocation output are traceable。</p></div>
+                </div>
+              </div>
+              <div id="set-danger" class="settings-page">
+                <h2>Danger Zone</h2><p>危险操作隔离展示，每个动作都要说明后果、要求角色、确认短语、影响对象和审计结果。</p>
+                <div class="grid" style="margin-top:16px">
+                  <div class="callout red"><strong>Reset evidence for project</strong><p>会清空 Evidence Matrix 和报告结论，不删除需求与用例。需要 owner 输入 RESET EVIDENCE。</p></div>
+                  <div class="callout red"><strong>Revoke all credentials</strong><p>会停止模型、MCP、API 自动化的外部访问。需要 owner 输入 REVOKE CREDENTIALS。</p></div>
+                  <div class="callout red"><strong>Delete project</strong><p>不可恢复。需要导出审计记录后执行。</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="components" class="screen">
+          <div class="screen-head"><div><div class="kicker">High-fidelity route</div><h1>Component & Toolchain Decisions</h1><p>OpenPencil 做结构，shadcn Figma kit 做视觉素材，coded prototype / shadcn-vue 是最终一致性来源。</p></div></div>
+          <div class="grid component-map">
+            <div class="panel">
+              <div class="panel-head"><h2>Component Matrix</h2><span class="badge blue">shadcn style</span></div>
+              <table class="table">
+                <thead><tr><th>Component</th><th>Crab usage</th><th>Reference</th></tr></thead>
+                <tbody>
+                  <tr><td>Sidebar / Resizable</td><td>workbench shell, left tree, right inspector</td><td>shadcn Blocks + Hoppscotch</td></tr>
+                  <tr><td>Data Table</td><td>state transition, evidence matrix, settings lists</td><td>Atlassian dense table</td></tr>
+                  <tr><td>Dialog / Alert Dialog</td><td>create/edit, approvals, Danger Zone</td><td>Radix + Supabase</td></tr>
+                  <tr><td>Sheet / Drawer</td><td>AI assistant, evidence detail, retrieval test</td><td>Cline + Dify</td></tr>
+                  <tr><td>Tabs / Stepper</td><td>request editor, trace tabs, lifecycle</td><td>Hoppscotch + Playwright</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="panel pad">
+              <h2>Reference Links To Keep</h2>
+              <div class="grid" style="margin-top:12px">
+                <div class="callout"><strong>Visual source</strong><p><a href="https://www.shadcn-vue.com/docs/figma">shadcn-vue Figma</a> / <a href="https://ui.shadcn.com/docs/figma">shadcn/ui Figma</a> / Obra and Pietro Schirano kits。</p></div>
+                <div class="callout"><strong>Product source</strong><p>Hoppscotch、Playwright、Allure、Dify、Open WebUI、Cline、Supabase 只迁移页面结构和交互模式，不复制产品边界。</p></div>
+                <div class="callout amber"><strong>OpenPencil boundary</strong><p>可打开 `.fig` 设计组件，但不等于 Vue 运行时组件，不保证 variants、tokens、交互状态完整。</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const navButtons = document.querySelectorAll(".sidebar [data-screen]");
+    const screens = document.querySelectorAll(".screen");
+    const showScreen = (screenId, activeButton) => {
+      navButtons.forEach((item) => item.classList.remove("active"));
+      screens.forEach((screen) => screen.classList.remove("active"));
+      if (activeButton) activeButton.classList.add("active");
+      document.getElementById(screenId).classList.add("active");
+    };
+
+    navButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        showScreen(button.dataset.screen, button);
+      });
+    });
+
+    document.querySelectorAll("[data-review-screen]").forEach((button) => {
+      button.addEventListener("click", () => {
+        showScreen(button.dataset.reviewScreen);
+      });
+    });
+
+    const settingsButtons = document.querySelectorAll("[data-settings]");
+    const settingsPages = document.querySelectorAll(".settings-page");
+    settingsButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        settingsButtons.forEach((item) => item.classList.remove("active"));
+        settingsPages.forEach((page) => page.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(`set-${button.dataset.settings}`).classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>

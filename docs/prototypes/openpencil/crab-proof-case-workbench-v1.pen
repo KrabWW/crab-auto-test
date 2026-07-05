@@ -1,0 +1,1831 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "pcv1a",
+      "name": "01 Workbench Overview",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 920,
+      "fill": "$--bg",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "a_top",
+          "name": "Top Bar",
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "fill": "$--surface",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "bottom": 1
+            },
+            "fill": "$--line"
+          },
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "a_logo",
+              "name": "Logo",
+              "x": 24,
+              "y": 18,
+              "width": 180,
+              "content": "Crab Auto Test",
+              "fontFamily": "$--font-primary",
+              "fontSize": 16,
+              "fontWeight": "700",
+              "fill": "$--text",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "a_project",
+              "name": "Project Switcher",
+              "x": 248,
+              "y": 19,
+              "width": 280,
+              "content": "支付中台 / Staging 环境",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "frame",
+              "id": "a_search",
+              "name": "Search",
+              "x": 560,
+              "y": 12,
+              "width": 360,
+              "height": 32,
+              "fill": "#F8FAFC",
+              "cornerRadius": 6,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_search_t",
+                  "name": "Search Placeholder",
+                  "x": 12,
+                  "y": 8,
+                  "width": 300,
+                  "content": "搜索 Proof Case、需求、执行、证据",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fill": "$--muted",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "a_user",
+              "name": "User",
+              "x": 1240,
+              "y": 19,
+              "width": 160,
+              "content": "谢嘉伟 / QA Lead",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "a_nav",
+          "name": "Primary Navigation",
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 864,
+          "fill": "#111827",
+          "layout": "vertical",
+          "gap": 8,
+          "padding": [
+            18,
+            14
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "a_nav_h",
+              "name": "Nav Header",
+              "width": "fill_container",
+              "content": "项目导航",
+              "fontFamily": "$--font-primary",
+              "fontSize": 12,
+              "fontWeight": "600",
+              "fill": "#94A3B8",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "frame",
+              "id": "a_nav_1",
+              "name": "Nav Active",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "#1E293B",
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_nav_1t",
+                  "name": "Workbench",
+                  "x": 12,
+                  "y": 10,
+                  "width": 160,
+                  "content": "Workbench",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "a_nav_2",
+              "name": "Verification Tasks",
+              "width": "fill_container",
+              "content": "Verification Tasks",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "#CBD5E1",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "a_nav_3",
+              "name": "Asset Library",
+              "width": "fill_container",
+              "content": "Asset Library",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "#CBD5E1",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "a_nav_4",
+              "name": "System Context",
+              "width": "fill_container",
+              "content": "System Context",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "#CBD5E1",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "a_nav_5",
+              "name": "Settings",
+              "width": "fill_container",
+              "content": "Settings",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "#CBD5E1",
+              "textGrowth": "fixed-width"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "a_main",
+          "name": "Overview Main",
+          "x": 220,
+          "y": 56,
+          "width": 1220,
+          "height": 864,
+          "fill": "$--bg",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "a_title",
+              "name": "Page Title",
+              "x": 28,
+              "y": 24,
+              "width": 420,
+              "content": "工作台：发布前证明链",
+              "fontFamily": "$--font-primary",
+              "fontSize": 22,
+              "fontWeight": "700",
+              "fill": "$--text",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "a_subtitle",
+              "name": "Subtitle",
+              "x": 28,
+              "y": 56,
+              "width": 620,
+              "content": "优先处理证据不足、待确认、失败定位；不要从工具菜单开始找功能。",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "frame",
+              "id": "a_primary",
+              "name": "Primary Action",
+              "x": 1020,
+              "y": 24,
+              "width": 156,
+              "height": 36,
+              "fill": "$--blue",
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_primary_t",
+                  "name": "Create Proof Case",
+                  "x": 16,
+                  "y": 10,
+                  "width": 128,
+                  "content": "新建 Proof Case",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_banner",
+              "name": "Next Action Banner",
+              "x": 28,
+              "y": 96,
+              "width": 1148,
+              "height": 72,
+              "fill": "#FFF7ED",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#FDBA74"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_banner_h",
+                  "name": "Banner Heading",
+                  "x": 18,
+                  "y": 14,
+                  "width": 560,
+                  "content": "下一步：确认 3 条状态流转，才能让报告进入可发布判断。",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                  "fill": "#9A3412",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_banner_b",
+                  "name": "Banner Body",
+                  "x": 18,
+                  "y": 40,
+                  "width": 820,
+                  "content": "AI 已生成草案，但 Evidence Matrix 仍缺少 API 响应和数据层证明。",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fill": "#9A3412",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_banner_link",
+                  "name": "Banner Link",
+                  "x": 946,
+                  "y": 27,
+                  "width": 170,
+                  "content": "打开待确认队列 ->",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fontWeight": "700",
+                  "fill": "$--blue",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_m1",
+              "name": "Metric Gate",
+              "x": 28,
+              "y": 188,
+              "width": 266,
+              "height": 86,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_m1_l",
+                  "name": "Label",
+                  "x": 14,
+                  "y": 14,
+                  "width": 180,
+                  "content": "Release Gate",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fill": "$--muted",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_m1_v",
+                  "name": "Value",
+                  "x": 14,
+                  "y": 38,
+                  "width": 210,
+                  "content": "Blocked / 证据不足",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 18,
+                  "fontWeight": "700",
+                  "fill": "$--red",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_m2",
+              "name": "Metric Approval",
+              "x": 310,
+              "y": 188,
+              "width": 266,
+              "height": 86,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_m2_l",
+                  "name": "Label",
+                  "x": 14,
+                  "y": 14,
+                  "width": 180,
+                  "content": "Pending Approval",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fill": "$--muted",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_m2_v",
+                  "name": "Value",
+                  "x": 14,
+                  "y": 38,
+                  "width": 210,
+                  "content": "7 个待确认",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 18,
+                  "fontWeight": "700",
+                  "fill": "$--amber",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_m3",
+              "name": "Metric Evidence",
+              "x": 592,
+              "y": 188,
+              "width": 266,
+              "height": 86,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_m3_l",
+                  "name": "Label",
+                  "x": 14,
+                  "y": 14,
+                  "width": 180,
+                  "content": "Evidence Completeness",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fill": "$--muted",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_m3_v",
+                  "name": "Value",
+                  "x": 14,
+                  "y": 38,
+                  "width": 210,
+                  "content": "68% 已采集",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 18,
+                  "fontWeight": "700",
+                  "fill": "$--blue",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_m4",
+              "name": "Metric Failure",
+              "x": 874,
+              "y": 188,
+              "width": 302,
+              "height": 86,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_m4_l",
+                  "name": "Label",
+                  "x": 14,
+                  "y": 14,
+                  "width": 180,
+                  "content": "Failed Proof",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fill": "$--muted",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_m4_v",
+                  "name": "Value",
+                  "x": 14,
+                  "y": 38,
+                  "width": 260,
+                  "content": "2 个需开发定位",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 18,
+                  "fontWeight": "700",
+                  "fill": "$--red",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_queue",
+              "name": "Proof Case Queue",
+              "x": 28,
+              "y": 300,
+              "width": 420,
+              "height": 520,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_q_h",
+                  "name": "Queue Header",
+                  "x": 16,
+                  "y": 16,
+                  "width": 240,
+                  "content": "Proof Case Queue",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 16,
+                  "fontWeight": "700",
+                  "fill": "$--text",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_q_f",
+                  "name": "Queue Filter",
+                  "x": 290,
+                  "y": 18,
+                  "width": 100,
+                  "content": "待处理优先",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fill": "$--blue",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "frame",
+                  "id": "a_q_1",
+                  "name": "Queue Row 1",
+                  "x": 16,
+                  "y": 56,
+                  "width": 388,
+                  "height": 104,
+                  "fill": "#F8FAFC",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a_q_1t",
+                      "name": "Queue Row Title",
+                      "x": 12,
+                      "y": 12,
+                      "width": 260,
+                      "content": "启用被禁用用户",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "$--text",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_1s",
+                      "name": "Status",
+                      "x": 278,
+                      "y": 12,
+                      "width": 88,
+                      "content": "待确认",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fontWeight": "700",
+                      "fill": "$--amber",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_1b",
+                      "name": "Body",
+                      "x": 12,
+                      "y": 40,
+                      "width": 350,
+                      "content": "需要确认 Disabled -> Enabled 状态流转，缺少 DB 证据。",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fill": "$--slate",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_1m",
+                      "name": "Meta",
+                      "x": 12,
+                      "y": 72,
+                      "width": 330,
+                      "content": "Requirement REQ-2412 / Owner: QA Lead / Risk: High",
+                      "fontFamily": "$--font-mono",
+                      "fontSize": 11,
+                      "fill": "$--muted",
+                      "textGrowth": "fixed-width"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "a_q_2",
+                  "name": "Queue Row 2",
+                  "x": 16,
+                  "y": 174,
+                  "width": 388,
+                  "height": 104,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a_q_2t",
+                      "name": "Queue Row Title",
+                      "x": 12,
+                      "y": 12,
+                      "width": 260,
+                      "content": "订单退款状态回滚",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "$--text",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_2s",
+                      "name": "Status",
+                      "x": 278,
+                      "y": 12,
+                      "width": 88,
+                      "content": "失败",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fontWeight": "700",
+                      "fill": "$--red",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_2b",
+                      "name": "Body",
+                      "x": 12,
+                      "y": 40,
+                      "width": 350,
+                      "content": "接口返回成功，但业务状态未从 Refunding 回到 Paid。",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fill": "$--slate",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_2m",
+                      "name": "Meta",
+                      "x": 12,
+                      "y": 72,
+                      "width": 330,
+                      "content": "Execution #845 / Evidence Conflict / Owner: Dev",
+                      "fontFamily": "$--font-mono",
+                      "fontSize": 11,
+                      "fill": "$--muted",
+                      "textGrowth": "fixed-width"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "a_q_3",
+                  "name": "Queue Row 3",
+                  "x": 16,
+                  "y": 292,
+                  "width": 388,
+                  "height": 104,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a_q_3t",
+                      "name": "Queue Row Title",
+                      "x": 12,
+                      "y": 12,
+                      "width": 260,
+                      "content": "批量导入客户名单",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "$--text",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_3s",
+                      "name": "Status",
+                      "x": 278,
+                      "y": 12,
+                      "width": 88,
+                      "content": "AI 草案",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fontWeight": "700",
+                      "fill": "$--purple",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_3b",
+                      "name": "Body",
+                      "x": 12,
+                      "y": 40,
+                      "width": 350,
+                      "content": "AI 识别出 5 个边界条件，等待 Reviewer 批量确认。",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fill": "$--slate",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_q_3m",
+                      "name": "Meta",
+                      "x": 12,
+                      "y": 72,
+                      "width": 330,
+                      "content": "Knowledge: CRM PRD v3 / Confidence: Medium",
+                      "fontFamily": "$--font-mono",
+                      "fontSize": 11,
+                      "fill": "$--muted",
+                      "textGrowth": "fixed-width"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_risk",
+              "name": "Risk Table",
+              "x": 468,
+              "y": 300,
+              "width": 468,
+              "height": 520,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_r_h",
+                  "name": "Risk Header",
+                  "x": 16,
+                  "y": 16,
+                  "width": 260,
+                  "content": "风险与阻塞",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 16,
+                  "fontWeight": "700",
+                  "fill": "$--text",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "frame",
+                  "id": "a_r_head",
+                  "name": "Table Head",
+                  "x": 16,
+                  "y": 54,
+                  "width": 436,
+                  "height": 36,
+                  "fill": "#F8FAFC",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a_r_c1",
+                      "name": "Column",
+                      "x": 12,
+                      "y": 10,
+                      "width": 116,
+                      "content": "对象",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fontWeight": "700",
+                      "fill": "$--muted",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_r_c2",
+                      "name": "Column",
+                      "x": 150,
+                      "y": 10,
+                      "width": 120,
+                      "content": "证据状态",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fontWeight": "700",
+                      "fill": "$--muted",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "text",
+                      "id": "a_r_c3",
+                      "name": "Column",
+                      "x": 300,
+                      "y": 10,
+                      "width": 120,
+                      "content": "下一步",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 12,
+                      "fontWeight": "700",
+                      "fill": "$--muted",
+                      "textGrowth": "fixed-width"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "a_r_1",
+                  "name": "Risk Row 1",
+                  "x": 28,
+                  "y": 110,
+                  "width": 410,
+                  "content": "启用用户     DB Missing       补充数据层验证",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--red",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_r_2",
+                  "name": "Risk Row 2",
+                  "x": 28,
+                  "y": 150,
+                  "width": 410,
+                  "content": "退款回滚     Conflict         开发定位状态写入",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--red",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_r_3",
+                  "name": "Risk Row 3",
+                  "x": 28,
+                  "y": 190,
+                  "width": 410,
+                  "content": "客户导入     Need Review      批量确认边界条件",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--amber",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "frame",
+                  "id": "a_r_timeline",
+                  "name": "Failure Trend",
+                  "x": 16,
+                  "y": 250,
+                  "width": 436,
+                  "height": 220,
+                  "fill": "#F8FAFC",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a_rt_h",
+                      "name": "Trend Heading",
+                      "x": 12,
+                      "y": 12,
+                      "width": 240,
+                      "content": "失败趋势 / 证据缺口",
+                      "fontFamily": "$--font-primary",
+                      "fontSize": 13,
+                      "fontWeight": "700",
+                      "fill": "$--text",
+                      "textGrowth": "fixed-width"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a_bar_1",
+                      "name": "Bar",
+                      "x": 28,
+                      "y": 158,
+                      "width": 42,
+                      "height": 28,
+                      "fill": "#93C5FD"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a_bar_2",
+                      "name": "Bar",
+                      "x": 90,
+                      "y": 132,
+                      "width": 42,
+                      "height": 54,
+                      "fill": "#FBBF24"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a_bar_3",
+                      "name": "Bar",
+                      "x": 152,
+                      "y": 104,
+                      "width": 42,
+                      "height": 82,
+                      "fill": "#F97316"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a_bar_4",
+                      "name": "Bar",
+                      "x": 214,
+                      "y": 72,
+                      "width": 42,
+                      "height": 114,
+                      "fill": "#EF4444"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a_bar_5",
+                      "name": "Bar",
+                      "x": 276,
+                      "y": 122,
+                      "width": 42,
+                      "height": 64,
+                      "fill": "#F97316"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a_bar_6",
+                      "name": "Bar",
+                      "x": 338,
+                      "y": 148,
+                      "width": 42,
+                      "height": 38,
+                      "fill": "#FBBF24"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a_ai",
+              "name": "AI Context Drawer",
+              "x": 956,
+              "y": 300,
+              "width": 220,
+              "height": 520,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "a_ai_h",
+                  "name": "AI Header",
+                  "x": 14,
+                  "y": 16,
+                  "width": 180,
+                  "content": "Context AI",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 16,
+                  "fontWeight": "700",
+                  "fill": "$--text",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "a_ai_b",
+                  "name": "AI Body",
+                  "x": 14,
+                  "y": 52,
+                  "width": 188,
+                  "content": "当前上下文：支付中台发布风险。\n\nAI 已识别：\n- 3 条状态流转待确认\n- 2 个证据冲突\n- 1 个高风险阻塞\n\n建议先处理启用用户 Proof Case，因为它影响本次发布门禁。",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "lineHeight": 18,
+                  "fill": "$--slate",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "frame",
+                  "id": "a_ai_call",
+                  "name": "Tool Call",
+                  "x": 14,
+                  "y": 258,
+                  "width": 188,
+                  "height": 92,
+                  "fill": "#F5F3FF",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#DDD6FE"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a_ai_call_t",
+                      "name": "Tool Call Text",
+                      "x": 10,
+                      "y": 10,
+                      "width": 168,
+                      "content": "MCP Tool Call\nread-only / approved\nlinked to Proof Case",
+                      "fontFamily": "$--font-mono",
+                      "fontSize": 11,
+                      "lineHeight": 16,
+                      "fill": "$--purple",
+                      "textGrowth": "fixed-width"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "a_ai_action",
+                  "name": "AI Action",
+                  "x": 14,
+                  "y": 386,
+                  "width": 188,
+                  "content": "查看 AI 依据与来源 ->",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "fill": "$--blue",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "pcv1b",
+      "name": "02 Proof Case Detail",
+      "x": 1500,
+      "y": 0,
+      "width": 1440,
+      "height": 920,
+      "fill": "$--bg",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "b_header",
+          "name": "Detail Header",
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 76,
+          "fill": "$--surface",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "bottom": 1
+            },
+            "fill": "$--line"
+          },
+          "children": [
+            {
+              "type": "text",
+              "id": "b_title",
+              "name": "Proof Case Title",
+              "x": 28,
+              "y": 16,
+              "width": 520,
+              "content": "Proof Case：启用被禁用用户",
+              "fontFamily": "$--font-primary",
+              "fontSize": 20,
+              "fontWeight": "700",
+              "fill": "$--text",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "b_meta",
+              "name": "Proof Case Meta",
+              "x": 28,
+              "y": 46,
+              "width": 760,
+              "content": "REQ-2412 / Owner: QA Lead / Release: 2026-07-08 / Last Run: #851",
+              "fontFamily": "$--font-mono",
+              "fontSize": 12,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "frame",
+              "id": "b_status",
+              "name": "Proof Status Badge",
+              "x": 1010,
+              "y": 20,
+              "width": 156,
+              "height": 32,
+              "fill": "#FEF3C7",
+              "cornerRadius": 999,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_status_t",
+                  "name": "Badge Text",
+                  "x": 16,
+                  "y": 8,
+                  "width": 124,
+                  "content": "Evidence Insufficient",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "fill": "$--amber",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "b_run",
+              "name": "Run Button",
+              "x": 1200,
+              "y": 20,
+              "width": 116,
+              "height": 32,
+              "fill": "$--blue",
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_run_t",
+                  "name": "Run Text",
+                  "x": 20,
+                  "y": 8,
+                  "width": 80,
+                  "content": "Run Proof",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "b_stages",
+          "name": "Lifecycle Stages",
+          "x": 0,
+          "y": 76,
+          "width": 220,
+          "height": 844,
+          "fill": "$--surface",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "right": 1
+            },
+            "fill": "$--line"
+          },
+          "layout": "vertical",
+          "gap": 10,
+          "padding": [
+            20,
+            16
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "b_s_h",
+              "name": "Stage Header",
+              "width": "fill_container",
+              "content": "生命周期",
+              "fontFamily": "$--font-primary",
+              "fontSize": 12,
+              "fontWeight": "700",
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "b_s_1",
+              "name": "Requirement Stage",
+              "width": "fill_container",
+              "content": "✓ Requirement",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--green",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "frame",
+              "id": "b_s_active",
+              "name": "Active Stage",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "#EFF6FF",
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_s_active_t",
+                  "name": "Active Text",
+                  "x": 10,
+                  "y": 10,
+                  "width": 160,
+                  "content": "2 State Transition",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fontWeight": "700",
+                  "fill": "$--blue",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "b_s_3",
+              "name": "Cases Stage",
+              "width": "fill_container",
+              "content": "3 Cases",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "b_s_4",
+              "name": "Automation Stage",
+              "width": "fill_container",
+              "content": "4 Automation",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "b_s_5",
+              "name": "Execution Stage",
+              "width": "fill_container",
+              "content": "5 Execution",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "b_s_6",
+              "name": "Evidence Stage",
+              "width": "fill_container",
+              "content": "6 Evidence",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "b_s_7",
+              "name": "Report Stage",
+              "width": "fill_container",
+              "content": "7 Report",
+              "fontFamily": "$--font-primary",
+              "fontSize": 13,
+              "fill": "$--muted",
+              "textGrowth": "fixed-width"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "b_center",
+          "name": "Stage Work Area",
+          "x": 220,
+          "y": 76,
+          "width": 820,
+          "height": 644,
+          "fill": "$--bg",
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "b_next",
+              "name": "Next Action",
+              "x": 24,
+              "y": 24,
+              "width": 772,
+              "height": 74,
+              "fill": "#FFF7ED",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#FDBA74"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_next_h",
+                  "name": "Next Action Heading",
+                  "x": 16,
+                  "y": 14,
+                  "width": 560,
+                  "content": "需要人工确认：Disabled -> Enabled 是否是权威状态流转？",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                  "fill": "#9A3412",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_next_b",
+                  "name": "Next Action Body",
+                  "x": 16,
+                  "y": 40,
+                  "width": 660,
+                  "content": "确认后才能让 API Case、UI Check 和 DB Snapshot 计入证据矩阵。",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "fill": "#9A3412",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "b_table",
+              "name": "State Transition Table",
+              "x": 24,
+              "y": 118,
+              "width": 772,
+              "height": 220,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_table_h",
+                  "name": "Table Heading",
+                  "x": 16,
+                  "y": 14,
+                  "width": 320,
+                  "content": "状态流转确认表",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                  "fill": "$--text",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_table_cols",
+                  "name": "Columns",
+                  "x": 16,
+                  "y": 54,
+                  "width": 700,
+                  "content": "业务对象        当前状态      触发动作        目标状态      证据点       Reviewer",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "fill": "$--muted",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_table_r1",
+                  "name": "Row 1",
+                  "x": 16,
+                  "y": 88,
+                  "width": 730,
+                  "content": "User Account    Disabled      Admin Enable    Enabled       UI/API/DB    待确认",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--amber",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_table_r2",
+                  "name": "Row 2",
+                  "x": 16,
+                  "y": 126,
+                  "width": 730,
+                  "content": "Audit Log       Empty         Enable Action   Created       Log/API      已确认",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--green",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_table_r3",
+                  "name": "Row 3",
+                  "x": 16,
+                  "y": 164,
+                  "width": 730,
+                  "content": "Permission      Limited       Role Refresh    Active        UI/API       AI 建议",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--purple",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "b_matrix",
+              "name": "Evidence Matrix",
+              "x": 24,
+              "y": 360,
+              "width": 772,
+              "height": 248,
+              "fill": "$--surface",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--line"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_matrix_h",
+                  "name": "Matrix Heading",
+                  "x": 16,
+                  "y": 14,
+                  "width": 300,
+                  "content": "证据矩阵：状态是否成立",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 15,
+                  "fontWeight": "700",
+                  "fill": "$--text",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_matrix_cols",
+                  "name": "Matrix Columns",
+                  "x": 16,
+                  "y": 54,
+                  "width": 700,
+                  "content": "证据类型        来源                   状态             结论",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "fill": "$--muted",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_matrix_r1",
+                  "name": "Matrix Row 1",
+                  "x": 16,
+                  "y": 88,
+                  "width": 720,
+                  "content": "UI Screenshot    Playwright step 03     Collected        页面显示已启用",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--green",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_matrix_r2",
+                  "name": "Matrix Row 2",
+                  "x": 16,
+                  "y": 126,
+                  "width": 720,
+                  "content": "API Response     PATCH /users/{id}      Valid            enabled=true",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--green",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_matrix_r3",
+                  "name": "Matrix Row 3",
+                  "x": 16,
+                  "y": 164,
+                  "width": 720,
+                  "content": "DB Snapshot      user.enabled           Missing          未采集，不能出报告",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--red",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_matrix_r4",
+                  "name": "Matrix Row 4",
+                  "x": 16,
+                  "y": 202,
+                  "width": 720,
+                  "content": "Human Review     QA Lead                Pending          等待状态流转确认",
+                  "fontFamily": "$--font-mono",
+                  "fontSize": 12,
+                  "fill": "$--amber",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "b_right",
+          "name": "Evidence And AI Panel",
+          "x": 1040,
+          "y": 76,
+          "width": 400,
+          "height": 644,
+          "fill": "$--surface",
+          "stroke": {
+            "align": "inside",
+            "thickness": {
+              "left": 1
+            },
+            "fill": "$--line"
+          },
+          "children": [
+            {
+              "type": "text",
+              "id": "b_right_h",
+              "name": "Panel Heading",
+              "x": 20,
+              "y": 24,
+              "width": 260,
+              "content": "AI 依据与审核",
+              "fontFamily": "$--font-primary",
+              "fontSize": 16,
+              "fontWeight": "700",
+              "fill": "$--text",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "frame",
+              "id": "b_ai_card",
+              "name": "AI Suggestion Card",
+              "x": 20,
+              "y": 64,
+              "width": 360,
+              "height": 176,
+              "fill": "#F5F3FF",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#DDD6FE"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_ai_card_t",
+                  "name": "AI Card Title",
+                  "x": 14,
+                  "y": 12,
+                  "width": 300,
+                  "content": "AI 结论：中等置信度",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fontWeight": "700",
+                  "fill": "$--purple",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_ai_card_b",
+                  "name": "AI Card Body",
+                  "x": 14,
+                  "y": 42,
+                  "width": 326,
+                  "content": "依据：PRD 第 3 节说明管理员可启用用户。\n结论：存在 Disabled -> Enabled 状态流转。\n风险：仅验证页面状态不能证明数据层成立。",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "lineHeight": 18,
+                  "fill": "#4C1D95",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "b_approve",
+              "name": "Approval Card",
+              "x": 20,
+              "y": 260,
+              "width": 360,
+              "height": 150,
+              "fill": "#ECFDF5",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#BBF7D0"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_ap_t",
+                  "name": "Approval Title",
+                  "x": 14,
+                  "y": 12,
+                  "width": 300,
+                  "content": "人工确认要求",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fontWeight": "700",
+                  "fill": "$--green",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_ap_b",
+                  "name": "Approval Body",
+                  "x": 14,
+                  "y": 42,
+                  "width": 326,
+                  "content": "确认项：\n1. enabled 字段是否权威\n2. 审计日志是否必须生成\n3. 数据库快照是否可接入 CI",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "lineHeight": 18,
+                  "fill": "#14532D",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "b_blocker",
+              "name": "Blocker Card",
+              "x": 20,
+              "y": 430,
+              "width": 360,
+              "height": 138,
+              "fill": "#FEF2F2",
+              "cornerRadius": 8,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#FECACA"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b_bl_t",
+                  "name": "Blocker Title",
+                  "x": 14,
+                  "y": 12,
+                  "width": 300,
+                  "content": "阻塞原因",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 13,
+                  "fontWeight": "700",
+                  "fill": "$--red",
+                  "textGrowth": "fixed-width"
+                },
+                {
+                  "type": "text",
+                  "id": "b_bl_b",
+                  "name": "Blocker Body",
+                  "x": 14,
+                  "y": 42,
+                  "width": 326,
+                  "content": "发生了什么：证据不足。\n为什么失败：未采集 DB Snapshot。\n影响：报告不能标记 Proof Passed。\n下一步：补充数据层验证或人工兜底。",
+                  "fontFamily": "$--font-primary",
+                  "fontSize": 12,
+                  "lineHeight": 17,
+                  "fill": "#7F1D1D",
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "b_bottom",
+          "name": "Execution Detail Bottom",
+          "x": 220,
+          "y": 720,
+          "width": 1220,
+          "height": 200,
+          "fill": "#0F172A",
+          "children": [
+            {
+              "type": "text",
+              "id": "b_log_h",
+              "name": "Log Header",
+              "x": 24,
+              "y": 18,
+              "width": 280,
+              "content": "Execution / Artifact Console",
+              "fontFamily": "$--font-primary",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width"
+            },
+            {
+              "type": "text",
+              "id": "b_log",
+              "name": "Execution Log",
+              "x": 24,
+              "y": 52,
+              "width": 1120,
+              "content": "[03] UI step passed: user status shows Enabled\n[04] API assertion passed: response.enabled == true\n[05] DB evidence missing: user.enabled snapshot not collected\n[gate] report blocked: Evidence Matrix has required missing row",
+              "fontFamily": "$--font-mono",
+              "fontSize": 12,
+              "lineHeight": 20,
+              "fill": "#CBD5E1",
+              "textGrowth": "fixed-width"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "--bg": {
+      "type": "color",
+      "value": "#F8FAFC"
+    },
+    "--surface": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "--line": {
+      "type": "color",
+      "value": "#CBD5E1"
+    },
+    "--text": {
+      "type": "color",
+      "value": "#0F172A"
+    },
+    "--slate": {
+      "type": "color",
+      "value": "#334155"
+    },
+    "--muted": {
+      "type": "color",
+      "value": "#64748B"
+    },
+    "--blue": {
+      "type": "color",
+      "value": "#2563EB"
+    },
+    "--purple": {
+      "type": "color",
+      "value": "#7C3AED"
+    },
+    "--green": {
+      "type": "color",
+      "value": "#16A34A"
+    },
+    "--amber": {
+      "type": "color",
+      "value": "#D97706"
+    },
+    "--red": {
+      "type": "color",
+      "value": "#DC2626"
+    },
+    "--font-primary": {
+      "type": "string",
+      "value": "Microsoft YaHei"
+    },
+    "--font-mono": {
+      "type": "string",
+      "value": "Consolas"
+    }
+  }
+}
