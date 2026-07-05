@@ -72,6 +72,7 @@ WHartTest（`D:\code\auto-test\WHartTest`）是产品意图源头，crab-auto-te
 
 参考：shadcn/ui Blocks、Radix Themes、Atlassian Design、Material Motion、Apple HIG Motion、Mobbin。
 
+- 做页面设计、原型、UI 实现前，必须先读取 `DESIGN.md`、`docs/PRODUCT-DESIGN-CHECKLISTS.md`、`docs/PRODUCT-DESIGN-HORIZONTAL-STANDARDS.zh-CN.md` 和对应 OpenSpec；这些文件是已确认的产品设计约束。
 - Nuxt/Vue 项目，优先使用已有 Tailwind + shadcn-vue 组件，**不直接引入 React 版 shadcn/ui**。
 - 不新增 UI 或动画依赖，除非当前模块没有合理替代且 leader 明确记录原因。
 - UI 必须像成熟测试管理工作台：克制、清晰、密集但不拥挤、状态明确、操作路径明确。
